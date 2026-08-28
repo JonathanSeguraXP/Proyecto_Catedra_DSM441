@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1047584081836",
+    "project_id": "catedradsm441",
+    "storage_bucket": "catedradsm441.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1047584081836:android:337efb8a880f6a6b22dc09",
+        "android_client_info": {
+          "package_name": "com.example.the_white_smile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwBVY5nxPd5eecMeJ8eA6meOUKA2qem08"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
