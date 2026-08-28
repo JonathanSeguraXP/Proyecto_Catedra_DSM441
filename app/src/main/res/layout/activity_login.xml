@@ -91,5 +91,25 @@
             android:layout_marginTop="8dp"
             android:text="@string/btn_forgot_password" />
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:background="?attr/colorOutlineVariant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGoogle"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:padding="8dp"
+            android:text="@string/btn_google"
+            android:textSize="16sp"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_google"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp" />
+
     </LinearLayout>
 </ScrollView>

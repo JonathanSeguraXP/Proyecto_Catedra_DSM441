@@ -4,31 +4,48 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.lifecycle.lifecycleScope
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var credentialManager: CredentialManager
+
     private lateinit var etEmail: TextInputEditText
     private lateinit var etPassword: TextInputEditText
     private lateinit var btnLogin: MaterialButton
     private lateinit var btnForgotPassword: MaterialButton
+    private lateinit var btnGoogle: MaterialButton
+
+    private val googleClientId =
+        "1047584081836-dmsvs530vuk2ginqtkno4jo3fsenhnec.apps.googleusercontent.com"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
+        credentialManager = CredentialManager.create(this)
 
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
         btnForgotPassword = findViewById(R.id.btnForgotPassword)
+        btnGoogle = findViewById(R.id.btnGoogle)
 
         btnLogin.setOnClickListener { login() }
         btnForgotPassword.setOnClickListener { recoverPassword() }
+        btnGoogle.setOnClickListener { signInWithGoogle() }
     }
 
     private fun login() {
@@ -55,6 +72,47 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, message, Toast.LENGTH_LONG).show()
                 }
             }
+    }
+
+    private fun signInWithGoogle() {
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(
+                GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(googleClientId)
+                    .setAutoSelectEnabled(true)
+                    .build()
+            )
+            .build()
+
+        lifecycleScope.launch {
+            try {
+                val result = credentialManager.getCredential(this@LoginActivity, request)
+                val credential = result.credential
+                if (credential is CustomCredential &&
+                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                ) {
+                    val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data)
+                    val firebaseCredential =
+                        GoogleAuthProvider.getCredential(googleIdToken.idToken, null)
+                    auth.signInWithCredential(firebaseCredential)
+                        .addOnCompleteListener(this@LoginActivity) { task ->
+                            if (task.isSuccessful) {
+                                goToMenu()
+                            } else {
+                                val message = task.exception?.message ?: getString(R.string.login_failed)
+                                Toast.makeText(this@LoginActivity, message, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                } else {
+                    Toast.makeText(this@LoginActivity, R.string.login_failed, Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                if (e.message?.contains("User cancelled", ignoreCase = true) != true) {
+                    Toast.makeText(this@LoginActivity, e.message ?: getString(R.string.login_failed), Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun recoverPassword() {

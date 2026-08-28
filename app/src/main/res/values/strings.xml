@@ -8,6 +8,7 @@
     <string name="hint_email">tucorreo@ejemplo.com</string>
     <string name="hint_password">••••••••</string>
     <string name="btn_login">Iniciar sesión</string>
+    <string name="btn_google">Continuar con Google</string>
     <string name="btn_forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="btn_register">Registrarse</string>
     <string name="login_error_empty">Completa el correo y la contraseña</string>
