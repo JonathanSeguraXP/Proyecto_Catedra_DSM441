@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">The_White_Smile</string>
+
+    <string name="login_title">The White Smile</string>
+    <string name="login_subtitle">Bienvenido, inicia sesión</string>
+    <string name="label_email">Usuario / Correo electrónico</string>
+    <string name="label_password">Contraseña</string>
+    <string name="hint_email">tucorreo@ejemplo.com</string>
+    <string name="hint_password">••••••••</string>
+    <string name="btn_login">Iniciar sesión</string>
+    <string name="btn_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="btn_register">Registrarse</string>
+    <string name="login_error_empty">Completa el correo y la contraseña</string>
+    <string name="login_error_invalid_email">Ingresa un correo electrónico válido</string>
+    <string name="login_failed">Error al iniciar sesión</string>
+    <string name="login_loading">Iniciando sesión…</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="menu_welcome">Menú principal</string>
+    <string name="menu_description">Opciones disponibles próximamente</string>
 </resources>
