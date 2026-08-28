@@ -52,6 +52,20 @@ class LoginActivity : AppCompatActivity() {
         btnGithub.setOnClickListener { signInWithGithub() }
     }
 
+    override fun onStart() {
+        super.onStart()
+        val pending = auth.pendingAuthResult
+        if (pending != null) {
+            pending
+                .addOnSuccessListener { goToMenu() }
+                .addOnFailureListener { e ->
+                    if (e.message?.contains("User cancelled", ignoreCase = true) != true) {
+                        Toast.makeText(this, e.message ?: getString(R.string.login_failed), Toast.LENGTH_LONG).show()
+                    }
+                }
+        }
+    }
+
     private fun login() {
         val email = etEmail.text?.toString()?.trim().orEmpty()
         val password = etPassword.text?.toString().orEmpty()
