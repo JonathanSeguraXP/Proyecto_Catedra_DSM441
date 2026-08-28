@@ -14,6 +14,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
@@ -26,6 +27,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var btnLogin: MaterialButton
     private lateinit var btnForgotPassword: MaterialButton
     private lateinit var btnGoogle: MaterialButton
+    private lateinit var btnGithub: MaterialButton
 
     private val googleClientId =
         "1047584081836-dmsvs530vuk2ginqtkno4jo3fsenhnec.apps.googleusercontent.com"
@@ -42,10 +44,12 @@ class LoginActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btnLogin)
         btnForgotPassword = findViewById(R.id.btnForgotPassword)
         btnGoogle = findViewById(R.id.btnGoogle)
+        btnGithub = findViewById(R.id.btnGithub)
 
         btnLogin.setOnClickListener { login() }
         btnForgotPassword.setOnClickListener { recoverPassword() }
         btnGoogle.setOnClickListener { signInWithGoogle() }
+        btnGithub.setOnClickListener { signInWithGithub() }
     }
 
     private fun login() {
@@ -113,6 +117,26 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun signInWithGithub() {
+        val provider = OAuthProvider.newBuilder("github.com")
+            .setScopes(listOf("user:email"))
+            .build()
+
+        auth.startActivityForSignInWithProvider(this, provider)
+            .addOnSuccessListener { result ->
+                goToMenu()
+            }
+            .addOnFailureListener { e ->
+                if (e.message?.contains("User cancelled", ignoreCase = true) != true) {
+                    Toast.makeText(
+                        this,
+                        e.message ?: getString(R.string.login_failed),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
     }
 
     private fun recoverPassword() {
