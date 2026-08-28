@@ -26,6 +26,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var etPassword: TextInputEditText
     private lateinit var btnLogin: MaterialButton
     private lateinit var btnForgotPassword: MaterialButton
+    private lateinit var btnRegister: MaterialButton
     private lateinit var btnGoogle: MaterialButton
     private lateinit var btnGithub: MaterialButton
 
@@ -43,11 +44,13 @@ class LoginActivity : AppCompatActivity() {
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
         btnForgotPassword = findViewById(R.id.btnForgotPassword)
+        btnRegister = findViewById(R.id.btnRegister)
         btnGoogle = findViewById(R.id.btnGoogle)
         btnGithub = findViewById(R.id.btnGithub)
 
         btnLogin.setOnClickListener { login() }
         btnForgotPassword.setOnClickListener { recoverPassword() }
+        btnRegister.setOnClickListener { goToRegister() }
         btnGoogle.setOnClickListener { signInWithGoogle() }
         btnGithub.setOnClickListener { signInWithGithub() }
     }
@@ -151,6 +154,11 @@ class LoginActivity : AppCompatActivity() {
                     ).show()
                 }
             }
+    }
+
+    private fun goToRegister() {
+        val intent = Intent(this, RegisterActivity::class.java)
+        startActivity(intent)
     }
 
     private fun recoverPassword() {
