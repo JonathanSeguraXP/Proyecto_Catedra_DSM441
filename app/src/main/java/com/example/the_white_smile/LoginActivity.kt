@@ -62,8 +62,8 @@ class LoginActivity : AppCompatActivity() {
             pending
                 .addOnSuccessListener { goToMenu() }
                 .addOnFailureListener { e ->
-                    if (e.message?.contains("User cancelled", ignoreCase = true) != true) {
-                        Toast.makeText(this, e.message ?: getString(R.string.login_failed), Toast.LENGTH_LONG).show()
+                    if (!isUserCancelled(e)) {
+                        Toast.makeText(this, FirebaseErrors.message(this, e), Toast.LENGTH_LONG).show()
                     }
                 }
         }
@@ -81,6 +81,9 @@ class LoginActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.login_error_invalid_email, Toast.LENGTH_SHORT).show()
             return
         }
+        if (!isOnline()) {
+            return
+        }
 
         btnLogin.isEnabled = false
         auth.signInWithEmailAndPassword(email, password)
@@ -89,13 +92,20 @@ class LoginActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     goToMenu()
                 } else {
-                    val message = task.exception?.message ?: getString(R.string.login_failed)
-                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        FirebaseErrors.message(this, task.exception),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
     }
 
     private fun signInWithGoogle() {
+        if (!isOnline()) {
+            return
+        }
+
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(
                 GetGoogleIdOption.Builder()
@@ -121,22 +131,33 @@ class LoginActivity : AppCompatActivity() {
                             if (task.isSuccessful) {
                                 goToMenu()
                             } else {
-                                val message = task.exception?.message ?: getString(R.string.login_failed)
-                                Toast.makeText(this@LoginActivity, message, Toast.LENGTH_LONG).show()
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    FirebaseErrors.message(this@LoginActivity, task.exception),
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
                         }
                 } else {
                     Toast.makeText(this@LoginActivity, R.string.login_failed, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
-                if (e.message?.contains("User cancelled", ignoreCase = true) != true) {
-                    Toast.makeText(this@LoginActivity, e.message ?: getString(R.string.login_failed), Toast.LENGTH_LONG).show()
+                if (!isUserCancelled(e)) {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        FirebaseErrors.message(this@LoginActivity, e),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
     }
 
     private fun signInWithGithub() {
+        if (!isOnline()) {
+            return
+        }
+
         val provider = OAuthProvider.newBuilder("github.com")
             .setScopes(listOf("user:email"))
             .build()
@@ -146,10 +167,10 @@ class LoginActivity : AppCompatActivity() {
                 goToMenu()
             }
             .addOnFailureListener { e ->
-                if (e.message?.contains("User cancelled", ignoreCase = true) != true) {
+                if (!isUserCancelled(e)) {
                     Toast.makeText(
                         this,
-                        e.message ?: getString(R.string.login_failed),
+                        FirebaseErrors.message(this, e),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -167,15 +188,35 @@ class LoginActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.login_error_invalid_email, Toast.LENGTH_SHORT).show()
             return
         }
+        if (!isOnline()) {
+            return
+        }
         auth.sendPasswordResetEmail(email)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Toast.makeText(this, "Te enviamos un correo para restablecer tu contraseña", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, R.string.reset_email_sent, Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(this, task.exception?.message ?: getString(R.string.login_failed), Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        FirebaseErrors.message(this, task.exception),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
     }
+
+    /** Verifica la conexión a internet y avisa al usuario si no la hay. */
+    private fun isOnline(): Boolean {
+        if (NetworkChecker.isOnline(this)) {
+            return true
+        }
+        Toast.makeText(this, R.string.error_no_connection, Toast.LENGTH_LONG).show()
+        return false
+    }
+
+    /** El usuario cerró el selector de cuenta: no es un error que debamos mostrar. */
+    private fun isUserCancelled(e: Throwable?): Boolean =
+        e?.message?.contains("User cancelled", ignoreCase = true) == true
 
     private fun goToMenu() {
         val intent = Intent(this, MenuActivity::class.java)
