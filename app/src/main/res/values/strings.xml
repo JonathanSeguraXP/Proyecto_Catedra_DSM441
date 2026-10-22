@@ -1,6 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">The_White_Smile</string>
+    <string name="app_name">The White Smile</string>
 
+    <!-- Login -->
     <string name="login_title">The White Smile</string>
     <string name="login_subtitle">Bienvenido, inicia sesión</string>
     <string name="label_email">Usuario / Correo electrónico</string>
@@ -10,22 +12,72 @@
     <string name="btn_login">Iniciar sesión</string>
     <string name="btn_google">Continuar con Google</string>
     <string name="btn_github">Continuar con GitHub</string>
+    <string name="btn_forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="not_registered">¿No tienes una cuenta?</string>
     <string name="btn_register">Registrarse</string>
+    <string name="remember_user">Recordar correo</string>
+
+    <!-- Registro -->
     <string name="register_title">Crear cuenta</string>
     <string name="register_subtitle">Regístrate para empezar</string>
     <string name="label_name">Nombre</string>
     <string name="label_confirm_password">Confirmar contraseña</string>
     <string name="btn_create_account">Registrarse</string>
-    <string name="register_failed">Error al registrarse</string>
-    <string name="register_password_mismatch">Las contraseñas no coinciden</string>
     <string name="register_success">Cuenta creada correctamente</string>
-    <string name="btn_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="register_failed">Error al registrarse</string>
+
+    <!-- Validaciones -->
     <string name="login_error_empty">Completa el correo y la contraseña</string>
     <string name="login_error_invalid_email">Ingresa un correo electrónico válido</string>
     <string name="login_failed">Error al iniciar sesión</string>
+    <string name="register_error_empty">Completa todos los campos</string>
+    <string name="register_error_name_empty">Ingresa tu nombre</string>
+    <string name="register_password_short">La contraseña debe tener al menos 6 caracteres</string>
+    <string name="register_password_mismatch">Las contraseñas no coinciden</string>
+
+    <!-- Estados de carga -->
     <string name="login_loading">Iniciando sesión…</string>
+    <string name="loading_login">Validando credenciales…</string>
+    <string name="loading_register">Creando tu cuenta…</string>
+
+    <!-- Sesión -->
+    <string name="login_success">Sesión iniciada correctamente</string>
+    <string name="reset_email_sent">Te enviamos un correo para restablecer tu contraseña</string>
     <string name="logout">Cerrar sesión</string>
+    <string name="session_closed">Sesión cerrada</string>
+
+    <!-- Menú -->
     <string name="menu_welcome">Menú principal</string>
-    <string name="menu_description">Opciones disponibles próximamente</string>
+    <string name="menu_description">Selecciona una opción</string>
+    <string name="menu_greeting">Hola, %1$s</string>
+    <string name="menu_option_appointments">Citas</string>
+    <string name="menu_option_treatments">Tratamientos</string>
+    <string name="menu_option_profile">Perfil</string>
+    <string name="menu_option_history">Historial</string>
+    <string name="menu_option_contact">Contacto</string>
+    <string name="menu_option_help">Ayuda</string>
+    <string name="menu_coming_soon">Próximamente disponible</string>
+
+    <!-- Diálogos -->
+    <string name="exit_title">Cerrar aplicación</string>
+    <string name="exit_message">¿Deseas salir de The White Smile?</string>
+    <string name="exit_confirm">Salir</string>
+    <string name="exit_cancel">Cancelar</string>
+
+    <!-- Errores de conexión -->
+    <string name="error_no_connection">Sin conexión a internet. Verifica tu red e inténtalo de nuevo.</string>
+    <string name="error_connection_timeout">La conexión tardó demasiado. Intenta nuevamente.</string>
+    <string name="error_unknown">Ocurrió un error inesperado. Intenta de nuevo</string>
+
+    <!-- Errores de Firebase (traducidos) -->
+    <string name="error_invalid_email">El formato del correo electrónico no es válido</string>
+    <string name="error_wrong_password">La contraseña es incorrecta</string>
+    <string name="error_user_not_found">No existe ninguna cuenta con este correo</string>
+    <string name="error_user_disabled">Esta cuenta ha sido deshabilitada</string>
+    <string name="error_too_many_requests">Demasiados intentos. Intenta más tarde</string>
+    <string name="error_email_already_in_use">Ya existe una cuenta con este correo</string>
+    <string name="error_weak_password">La contraseña es demasiado débil (mínimo 6 caracteres)</string>
+    <string name="error_operation_not_allowed">Este método de acceso no está habilitado</string>
+    <string name="error_credential_already_in_use">Esta credencial ya está vinculada a otra cuenta</string>
+    <string name="error_account_exists_different_credential">Ya existe una cuenta con este correo. Inicia sesión con el método original</string>
 </resources>

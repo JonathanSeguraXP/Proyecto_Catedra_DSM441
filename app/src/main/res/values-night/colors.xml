@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta principal (azul dental / turquesa) - modo oscuro -->
+    <color name="primary">#7FD3DB</color>
+    <color name="on_primary">#00363C</color>
+    <color name="primary_container">#00525A</color>
+    <color name="on_primary_container">#CCEFF2</color>
+
+    <!-- Secundario (azul cielo) - modo oscuro -->
+    <color name="secondary">#88CFF4</color>
+    <color name="on_secondary">#00344B</color>
+    <color name="secondary_container">#004C6D</color>
+    <color name="on_secondary_container">#CCE7F6</color>
+
+    <!-- Terciario (verde menta) - modo oscuro -->
+    <color name="tertiary">#A5D5AF</color>
+    <color name="on_tertiary">#0B3A15</color>
+    <color name="tertiary_container">#23512F</color>
+    <color name="on_tertiary_container">#C0F4C8</color>
+
+    <!-- Superficie / fondo oscuro -->
+    <color name="background">#101415</color>
+    <color name="on_background">#E0E3E4</color>
+    <color name="surface">#101415</color>
+    <color name="on_surface">#E0E3E4</color>
+    <color name="surface_variant">#3F494A</color>
+    <color name="on_surface_variant">#BEC8CA</color>
+    <color name="outline">#899294</color>
+
+    <color name="loading_scrim">#CC101415</color>
+</resources>
