@@ -2,6 +2,8 @@ package com.example.the_white_smile
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.credentials.CredentialManager
@@ -11,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
@@ -29,6 +32,9 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var btnRegister: MaterialButton
     private lateinit var btnGoogle: MaterialButton
     private lateinit var btnGithub: MaterialButton
+    private lateinit var cbRemember: MaterialCheckBox
+    private lateinit var layoutLoading: View
+    private lateinit var tvLoading: TextView
 
     private val googleClientId =
         "1047584081836-dmsvs530vuk2ginqtkno4jo3fsenhnec.apps.googleusercontent.com"
@@ -47,6 +53,11 @@ class LoginActivity : AppCompatActivity() {
         btnRegister = findViewById(R.id.btnRegister)
         btnGoogle = findViewById(R.id.btnGoogle)
         btnGithub = findViewById(R.id.btnGithub)
+        cbRemember = findViewById(R.id.cbRemember)
+        layoutLoading = findViewById(R.id.layoutLoading)
+        tvLoading = findViewById(R.id.tvLoading)
+
+        restoreRememberedEmail()
 
         btnLogin.setOnClickListener { login() }
         btnForgotPassword.setOnClickListener { recoverPassword() }
@@ -57,6 +68,13 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+
+        // Si ya existe una sesion activa, se entra directo al menu principal.
+        if (auth.currentUser != null) {
+            goToMenu()
+            return
+        }
+
         val pending = auth.pendingAuthResult
         if (pending != null) {
             pending
@@ -67,6 +85,45 @@ class LoginActivity : AppCompatActivity() {
                     }
                 }
         }
+    }
+
+    // ---------- Recordar correo ----------
+
+    private fun restoreRememberedEmail() {
+        val preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        if (preferences.getBoolean(KEY_REMEMBER, false)) {
+            etEmail.setText(preferences.getString(KEY_EMAIL, "").orEmpty())
+            cbRemember.isChecked = true
+        }
+    }
+
+    private fun saveRememberedEmail(email: String) {
+        val preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val editor = preferences.edit()
+        editor.putBoolean(KEY_REMEMBER, cbRemember.isChecked)
+        if (cbRemember.isChecked) {
+            editor.putString(KEY_EMAIL, email)
+        } else {
+            editor.remove(KEY_EMAIL)
+        }
+        editor.apply()
+    }
+
+    // ---------- Capa de carga ----------
+
+    private fun showLoading(message: String) {
+        tvLoading.text = message
+        layoutLoading.visibility = View.VISIBLE
+        layoutLoading.alpha = 0f
+        layoutLoading.animate().alpha(1f).setDuration(200).start()
+    }
+
+    private fun hideLoading() {
+        layoutLoading.animate()
+            .alpha(0f)
+            .setDuration(150)
+            .withEndAction { layoutLoading.visibility = View.GONE }
+            .start()
     }
 
     private fun login() {
@@ -86,10 +143,14 @@ class LoginActivity : AppCompatActivity() {
         }
 
         btnLogin.isEnabled = false
+        showLoading(getString(R.string.loading_login))
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
+                hideLoading()
                 btnLogin.isEnabled = true
                 if (task.isSuccessful) {
+                    saveRememberedEmail(email)
+                    Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show()
                     goToMenu()
                 } else {
                     Toast.makeText(
@@ -116,6 +177,7 @@ class LoginActivity : AppCompatActivity() {
             )
             .build()
 
+        showLoading(getString(R.string.loading_login))
         lifecycleScope.launch {
             try {
                 val result = credentialManager.getCredential(this@LoginActivity, request)
@@ -128,6 +190,7 @@ class LoginActivity : AppCompatActivity() {
                         GoogleAuthProvider.getCredential(googleIdToken.idToken, null)
                     auth.signInWithCredential(firebaseCredential)
                         .addOnCompleteListener(this@LoginActivity) { task ->
+                            hideLoading()
                             if (task.isSuccessful) {
                                 goToMenu()
                             } else {
@@ -139,9 +202,11 @@ class LoginActivity : AppCompatActivity() {
                             }
                         }
                 } else {
+                    hideLoading()
                     Toast.makeText(this@LoginActivity, R.string.login_failed, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
+                hideLoading()
                 if (!isUserCancelled(e)) {
                     Toast.makeText(
                         this@LoginActivity,
@@ -162,11 +227,14 @@ class LoginActivity : AppCompatActivity() {
             .setScopes(listOf("user:email"))
             .build()
 
+        showLoading(getString(R.string.loading_login))
         auth.startActivityForSignInWithProvider(this, provider)
             .addOnSuccessListener { result ->
+                hideLoading()
                 goToMenu()
             }
             .addOnFailureListener { e ->
+                hideLoading()
                 if (!isUserCancelled(e)) {
                     Toast.makeText(
                         this,
@@ -191,8 +259,10 @@ class LoginActivity : AppCompatActivity() {
         if (!isOnline()) {
             return
         }
+        showLoading(getString(R.string.loading_login))
         auth.sendPasswordResetEmail(email)
             .addOnCompleteListener { task ->
+                hideLoading()
                 if (task.isSuccessful) {
                     Toast.makeText(this, R.string.reset_email_sent, Toast.LENGTH_LONG).show()
                 } else {
@@ -223,5 +293,11 @@ class LoginActivity : AppCompatActivity() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
+    }
+
+    companion object {
+        private const val PREFS_NAME = "the_white_smile_prefs"
+        private const val KEY_REMEMBER = "remember_email"
+        private const val KEY_EMAIL = "saved_email"
     }
 }
