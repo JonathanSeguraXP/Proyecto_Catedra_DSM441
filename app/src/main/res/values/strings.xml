@@ -45,6 +45,7 @@
     <string name="reset_email_sent">Te enviamos un correo para restablecer tu contraseña</string>
     <string name="logout">Cerrar sesión</string>
     <string name="session_closed">Sesión cerrada</string>
+    <string name="logout_confirm_message">¿Deseas cerrar la sesión y volver al inicio?</string>
 
     <!-- Menú -->
     <string name="menu_welcome">Menú principal</string>
