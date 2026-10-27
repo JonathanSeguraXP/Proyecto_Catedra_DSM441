@@ -1,0 +1,16 @@
+package com.example.the_white_smile.core
+
+import com.example.the_white_smile.data.AuthRepository
+import com.example.the_white_smile.data.FirebaseAuthRepository
+import com.google.firebase.auth.FirebaseAuth
+
+/**
+ * Punto unico de construccion de dependencias (inyeccion manual).
+ * Las pantallas piden sus dependencias aqui en lugar de crearlas por su cuenta.
+ */
+object ServiceLocator {
+
+    val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+
+    val authRepository: AuthRepository by lazy { FirebaseAuthRepository(auth) }
+}
