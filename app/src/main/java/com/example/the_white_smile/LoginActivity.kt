@@ -5,24 +5,34 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.the_white_smile.core.ServiceLocator
+import com.example.the_white_smile.core.isUserCancelled
+import com.example.the_white_smile.ui.login.LoginEvent
+import com.example.the_white_smile.ui.login.LoginUiState
+import com.example.the_white_smile.ui.login.LoginViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.launch
 
+/**
+ * Pantalla de login.
+ * Solo se encarga de la vista: delega validaciones y llamadas a [LoginViewModel].
+ */
 class LoginActivity : AppCompatActivity() {
 
-    private lateinit var auth: FirebaseAuth
+    private val viewModel: LoginViewModel by viewModels { LoginViewModel.factory(this) }
+
     private lateinit var credentialManager: CredentialManager
 
     private lateinit var etEmail: TextInputEditText
@@ -43,9 +53,30 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        auth = FirebaseAuth.getInstance()
         credentialManager = CredentialManager.create(this)
 
+        bindViews()
+        restoreRememberedEmail()
+        setupListeners()
+        observeViewModel()
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        // Si ya existe una sesion activa, se entra directo al menu principal.
+        if (viewModel.hasActiveSession()) {
+            goToMenu()
+            return
+        }
+
+        // Flujo OAuth que quedo pendiente si el sistema recreo la Activity.
+        ServiceLocator.auth.pendingAuthResult?.addOnSuccessListener { goToMenu() }
+    }
+
+    // ---------- Vista ----------
+
+    private fun bindViews() {
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
@@ -56,35 +87,116 @@ class LoginActivity : AppCompatActivity() {
         cbRemember = findViewById(R.id.cbRemember)
         layoutLoading = findViewById(R.id.layoutLoading)
         tvLoading = findViewById(R.id.tvLoading)
-
-        restoreRememberedEmail()
-
-        btnLogin.setOnClickListener { login() }
-        btnForgotPassword.setOnClickListener { recoverPassword() }
-        btnRegister.setOnClickListener { goToRegister() }
-        btnGoogle.setOnClickListener { signInWithGoogle() }
-        btnGithub.setOnClickListener { signInWithGithub() }
     }
 
-    override fun onStart() {
-        super.onStart()
-
-        // Si ya existe una sesion activa, se entra directo al menu principal.
-        if (auth.currentUser != null) {
-            goToMenu()
-            return
+    private fun setupListeners() {
+        btnLogin.setOnClickListener {
+            viewModel.login(
+                email = etEmail.text?.toString().orEmpty(),
+                password = etPassword.text?.toString().orEmpty()
+            )
         }
+        btnForgotPassword.setOnClickListener {
+            viewModel.recoverPassword(etEmail.text?.toString().orEmpty())
+        }
+        btnRegister.setOnClickListener { goToRegister() }
+        btnGoogle.setOnClickListener { startGoogleSignIn() }
+        btnGithub.setOnClickListener { startGithubSignIn() }
+    }
 
-        val pending = auth.pendingAuthResult
-        if (pending != null) {
-            pending
-                .addOnSuccessListener { goToMenu() }
-                .addOnFailureListener { e ->
-                    if (!isUserCancelled(e)) {
-                        Toast.makeText(this, FirebaseErrors.message(this, e), Toast.LENGTH_LONG).show()
-                    }
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { viewModel.uiState.collect(::render) }
+                launch { viewModel.events.collect(::handleEvent) }
+            }
+        }
+    }
+
+    private fun render(state: LoginUiState) {
+        tvLoading.setText(state.loadingMessage)
+        if (state.isLoading) showLoading() else hideLoading()
+    }
+
+    private fun handleEvent(event: LoginEvent) {
+        when (event) {
+            is LoginEvent.Message -> toastShort(event.messageRes)
+            is LoginEvent.Error -> {
+                if (!event.cause.isUserCancelled()) {
+                    toastLong(FirebaseErrors.message(this, event.cause))
                 }
+            }
+            is LoginEvent.LoggedIn -> {
+                saveRememberedEmail(event.email)
+                toastShort(R.string.login_success)
+                goToMenu()
+            }
         }
+    }
+
+    private fun showLoading() {
+        if (layoutLoading.visibility == View.VISIBLE) return
+        layoutLoading.visibility = View.VISIBLE
+        layoutLoading.alpha = 0f
+        layoutLoading.animate().alpha(1f).setDuration(200).start()
+    }
+
+    private fun hideLoading() {
+        if (layoutLoading.visibility != View.VISIBLE) return
+        layoutLoading.animate()
+            .alpha(0f)
+            .setDuration(150)
+            .withEndAction { layoutLoading.visibility = View.GONE }
+            .start()
+    }
+
+    private fun toastShort(messageRes: Int) {
+        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun toastLong(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    // ---------- Accesos externos ----------
+
+    private fun startGoogleSignIn() {
+        if (!viewModel.isOnline()) return
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(
+                GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(googleClientId)
+                    .setAutoSelectEnabled(true)
+                    .build()
+            )
+            .build()
+
+        viewModel.onExternalFlowStarted()
+        lifecycleScope.launch {
+            try {
+                val result = credentialManager.getCredential(this@LoginActivity, request)
+                val credential = result.credential
+                if (credential is CustomCredential &&
+                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                ) {
+                    val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data)
+                    viewModel.signInWithGoogle(googleIdToken.idToken)
+                } else {
+                    viewModel.onExternalFlowCancelled()
+                    toastLong(getString(R.string.login_failed))
+                }
+            } catch (e: Exception) {
+                viewModel.onExternalFlowCancelled()
+                if (!e.isUserCancelled()) viewModel.reportError(e)
+            }
+        }
+    }
+
+    private fun startGithubSignIn() {
+        if (!viewModel.isOnline()) return
+        viewModel.signInWithGithub(this)
     }
 
     // ---------- Recordar correo ----------
@@ -100,8 +212,9 @@ class LoginActivity : AppCompatActivity() {
     private fun saveRememberedEmail(email: String) {
         val preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val editor = preferences.edit()
-        editor.putBoolean(KEY_REMEMBER, cbRemember.isChecked)
-        if (cbRemember.isChecked) {
+        val remember = cbRemember.isChecked && email.isNotBlank()
+        editor.putBoolean(KEY_REMEMBER, remember)
+        if (remember) {
             editor.putString(KEY_EMAIL, email)
         } else {
             editor.remove(KEY_EMAIL)
@@ -109,184 +222,11 @@ class LoginActivity : AppCompatActivity() {
         editor.apply()
     }
 
-    // ---------- Capa de carga ----------
-
-    private fun showLoading(message: String) {
-        tvLoading.text = message
-        layoutLoading.visibility = View.VISIBLE
-        layoutLoading.alpha = 0f
-        layoutLoading.animate().alpha(1f).setDuration(200).start()
-    }
-
-    private fun hideLoading() {
-        layoutLoading.animate()
-            .alpha(0f)
-            .setDuration(150)
-            .withEndAction { layoutLoading.visibility = View.GONE }
-            .start()
-    }
-
-    private fun login() {
-        val email = etEmail.text?.toString()?.trim().orEmpty()
-        val password = etPassword.text?.toString().orEmpty()
-
-        if (email.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, R.string.login_error_empty, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, R.string.login_error_invalid_email, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!isOnline()) {
-            return
-        }
-
-        btnLogin.isEnabled = false
-        showLoading(getString(R.string.loading_login))
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this) { task ->
-                hideLoading()
-                btnLogin.isEnabled = true
-                if (task.isSuccessful) {
-                    saveRememberedEmail(email)
-                    Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show()
-                    goToMenu()
-                } else {
-                    Toast.makeText(
-                        this,
-                        FirebaseErrors.message(this, task.exception),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-    }
-
-    private fun signInWithGoogle() {
-        if (!isOnline()) {
-            return
-        }
-
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(
-                GetGoogleIdOption.Builder()
-                    .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(googleClientId)
-                    .setAutoSelectEnabled(true)
-                    .build()
-            )
-            .build()
-
-        showLoading(getString(R.string.loading_login))
-        lifecycleScope.launch {
-            try {
-                val result = credentialManager.getCredential(this@LoginActivity, request)
-                val credential = result.credential
-                if (credential is CustomCredential &&
-                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                ) {
-                    val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data)
-                    val firebaseCredential =
-                        GoogleAuthProvider.getCredential(googleIdToken.idToken, null)
-                    auth.signInWithCredential(firebaseCredential)
-                        .addOnCompleteListener(this@LoginActivity) { task ->
-                            hideLoading()
-                            if (task.isSuccessful) {
-                                goToMenu()
-                            } else {
-                                Toast.makeText(
-                                    this@LoginActivity,
-                                    FirebaseErrors.message(this@LoginActivity, task.exception),
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-                } else {
-                    hideLoading()
-                    Toast.makeText(this@LoginActivity, R.string.login_failed, Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                hideLoading()
-                if (!isUserCancelled(e)) {
-                    Toast.makeText(
-                        this@LoginActivity,
-                        FirebaseErrors.message(this@LoginActivity, e),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun signInWithGithub() {
-        if (!isOnline()) {
-            return
-        }
-
-        val provider = OAuthProvider.newBuilder("github.com")
-            .setScopes(listOf("user:email"))
-            .build()
-
-        showLoading(getString(R.string.loading_login))
-        auth.startActivityForSignInWithProvider(this, provider)
-            .addOnSuccessListener { result ->
-                hideLoading()
-                goToMenu()
-            }
-            .addOnFailureListener { e ->
-                hideLoading()
-                if (!isUserCancelled(e)) {
-                    Toast.makeText(
-                        this,
-                        FirebaseErrors.message(this, e),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-    }
+    // ---------- Navegacion ----------
 
     private fun goToRegister() {
-        val intent = Intent(this, RegisterActivity::class.java)
-        startActivity(intent)
+        startActivity(Intent(this, RegisterActivity::class.java))
     }
-
-    private fun recoverPassword() {
-        val email = etEmail.text?.toString()?.trim().orEmpty()
-        if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, R.string.login_error_invalid_email, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!isOnline()) {
-            return
-        }
-        showLoading(getString(R.string.loading_login))
-        auth.sendPasswordResetEmail(email)
-            .addOnCompleteListener { task ->
-                hideLoading()
-                if (task.isSuccessful) {
-                    Toast.makeText(this, R.string.reset_email_sent, Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        FirebaseErrors.message(this, task.exception),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-    }
-
-    /** Verifica la conexión a internet y avisa al usuario si no la hay. */
-    private fun isOnline(): Boolean {
-        if (NetworkChecker.isOnline(this)) {
-            return true
-        }
-        Toast.makeText(this, R.string.error_no_connection, Toast.LENGTH_LONG).show()
-        return false
-    }
-
-    /** El usuario cerró el selector de cuenta: no es un error que debamos mostrar. */
-    private fun isUserCancelled(e: Throwable?): Boolean =
-        e?.message?.contains("User cancelled", ignoreCase = true) == true
 
     private fun goToMenu() {
         val intent = Intent(this, MenuActivity::class.java)
@@ -295,9 +235,9 @@ class LoginActivity : AppCompatActivity() {
         finish()
     }
 
-    companion object {
-        private const val PREFS_NAME = "the_white_smile_prefs"
-        private const val KEY_REMEMBER = "remember_email"
-        private const val KEY_EMAIL = "saved_email"
+    private companion object {
+        const val PREFS_NAME = "the_white_smile_prefs"
+        const val KEY_REMEMBER = "remember_email"
+        const val KEY_EMAIL = "saved_email"
     }
 }

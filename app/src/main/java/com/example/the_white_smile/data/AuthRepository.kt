@@ -1,5 +1,6 @@
 package com.example.the_white_smile.data
 
+import android.app.Activity
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.SessionUser
 
@@ -24,6 +25,8 @@ interface AuthRepository {
     ): AuthResult<SessionUser>
 
     suspend fun signInWithGoogleIdToken(idToken: String): AuthResult<SessionUser>
+
+    suspend fun signInWithGithub(activity: Activity): AuthResult<SessionUser>
 
     suspend fun sendPasswordReset(email: String): AuthResult<Unit>
 

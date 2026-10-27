@@ -1,11 +1,13 @@
 package com.example.the_white_smile.data
 
+import android.app.Activity
 import com.example.the_white_smile.core.awaitResult
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.SessionUser
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.CancellationException
 
@@ -61,6 +63,23 @@ class FirebaseAuthRepository(
         user.toSessionUser()
     }
 
+    /**
+     * El navegador del flujo OAuth lo abre la Activity, por eso se recibe como
+     * parametro. La operacion termina cuando el usuario vuelve a la aplicacion.
+     */
+    override suspend fun signInWithGithub(
+        activity: Activity
+    ): AuthResult<SessionUser> = runAuth {
+        val provider = OAuthProvider.newBuilder(GITHUB_PROVIDER)
+            .setScopes(listOf("user:email"))
+            .build()
+        val user = auth.startActivityForSignInWithProvider(activity, provider)
+            .awaitResult()
+            .user
+            ?: throw IllegalStateException("No se pudo obtener el usuario")
+        user.toSessionUser()
+    }
+
     override suspend fun sendPasswordReset(email: String): AuthResult<Unit> = runAuth {
         auth.sendPasswordResetEmail(email).awaitResult()
     }
@@ -84,4 +103,8 @@ class FirebaseAuthRepository(
             email = email,
             displayName = name
         )
+
+    private companion object {
+        const val GITHUB_PROVIDER = "github.com"
+    }
 }
