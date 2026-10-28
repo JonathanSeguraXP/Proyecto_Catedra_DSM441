@@ -18,6 +18,7 @@ import com.example.the_white_smile.core.isUserCancelled
 import com.example.the_white_smile.ui.login.LoginEvent
 import com.example.the_white_smile.ui.login.LoginUiState
 import com.example.the_white_smile.ui.login.LoginViewModel
+import com.example.the_white_smile.util.FirebaseErrors
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.material.button.MaterialButton

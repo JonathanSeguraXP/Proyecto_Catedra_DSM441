@@ -1,6 +1,7 @@
-package com.example.the_white_smile
+package com.example.the_white_smile.util
 
 import android.content.Context
+import com.example.the_white_smile.R
 import com.google.firebase.auth.FirebaseAuthException
 
 /**

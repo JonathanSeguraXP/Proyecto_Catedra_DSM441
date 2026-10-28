@@ -24,22 +24,63 @@ Aplicación Android desarrollada en **Kotlin** para el Proyecto de Cátedra de l
 | Firebase Authentication | Autenticación de usuarios |
 | Firebase Auth OAuth (Google, GitHub) | Login con proveedores |
 | Android Credential Manager | Métodos de autenticación modernos |
+| MVVM + Kotlin Coroutines | Separación entre vista, estado y datos |
+| JUnit 4 + coroutines-test | Pruebas unitarias de los ViewModel |
+
+## 🏗️ Arquitectura
+
+El proyecto sigue el patrón **MVVM** con una separación en capas:
+
+| Capa | Paquete | Responsabilidad |
+|------|---------|-----------------|
+| Vista | `*Activity.kt` | Pinta la pantalla, escucha los eventos y navega. No accede a Firebase. |
+| Presentación | `ui/` | `ViewModel` con el estado (`StateFlow`) y los eventos de una sola vez (`SharedFlow`). |
+| Dominio | `domain/` | Contratos y modelos sin dependencias de Android (`ConnectivityChecker`, `EmailValidator`, `SessionUser`, `AuthResult`). |
+| Datos | `data/` | Contrato `AuthRepository` e implementaciones concretas: Firebase, estado de red y validación de correo. |
+| Utilidades | `core/`, `util/` | Inyección de dependencias manual, extensión de `Task` a corrutinas y traducción de errores. |
+
+Flujo de una acción: la Activity llama a un método del `ViewModel`, este valida, consulta el repositorio y actualiza el estado; la Activity reacciona con `render(state)` o `handleEvent(event)`. Las dependencias se arman a mano en `core/ServiceLocator.kt`.
 
 ## 📁 Estructura del proyecto
 
 ```
 app/src/main/java/com/example/the_white_smile/
-├── LoginActivity.kt      # Pantalla de inicio de sesión
-├── RegisterActivity.kt   # Registro de nuevos usuarios
-└── MenuActivity.kt       # Menú principal (post-login)
+├── LoginActivity.kt              # Vista del inicio de sesión
+├── RegisterActivity.kt           # Vista del registro
+├── MenuActivity.kt               # Vista del menú principal
+├── core/
+│   ├── ServiceLocator.kt         # Inyección de dependencias manual
+│   ├── TaskExtensions.kt         # Task de Firebase -> corrutinas
+│   └── ErrorUtils.kt             # Errores que no deben mostrarse
+├── data/
+│   ├── AuthRepository.kt         # Contrato de autenticación
+│   ├── FirebaseAuthRepository.kt # Implementación con Firebase
+│   ├── AndroidConnectivityChecker.kt
+│   └── AndroidEmailValidator.kt
+├── domain/
+│   ├── AuthResult.kt
+│   ├── SessionUser.kt
+│   ├── ConnectivityChecker.kt
+│   └── EmailValidator.kt
+├── ui/
+│   ├── login/                    # LoginViewModel, estado y eventos
+│   ├── register/                 # RegisterViewModel, estado y eventos
+│   └── menu/                     # MenuViewModel, estado y eventos
+└── util/
+    ├── FirebaseErrors.kt         # Errores de Firebase en español
+    └── NetworkChecker.kt         # Estado de la conexión
+
+app/src/test/java/com/example/the_white_smile/
+├── core/MainDispatcherRule.kt    # Dispatcher principal para tests
+└── ui/login/LoginViewModelTest.kt # Pruebas del LoginViewModel
 
 app/src/main/res/
 ├── layout/
-│   ├── activity_login.xml     # Diseño del login
-│   ├── activity_register.xml  # Diseño del registro
-│   └── activity_menu.xml      # Diseño del menú
-├── values/                    # Strings, colores, temas
-└── drawable/                  # Iconos (Google, GitHub, etc.)
+│   ├── activity_login.xml        # Diseño del login
+│   ├── activity_register.xml     # Diseño del registro
+│   └── activity_menu.xml         # Diseño del menú
+├── values/                       # Strings, colores, temas
+└── drawable/                     # Iconos (Google, GitHub, etc.)
 ```
 
 ## 🔧 Requisitos
@@ -52,7 +93,7 @@ app/src/main/res/
 
 ### 1. Clonar el repositorio
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
 ```
 
 ### 2. Configurar Firebase
@@ -69,6 +110,16 @@ git clone <URL_DEL_REPOSITORIO>
 Abre el proyecto en Android Studio, espera la sincronización de Gradle y presiona **Run ▶**.
 
 ## 🧪 Cómo probar
+
+### Pruebas automáticas
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+`LoginViewModelTest` cubre las validaciones, la falta de conexión, el estado de carga y los casos de éxito y error usando dobles de prueba: no requiere red, Firebase ni emulador.
+
+### Prueba manual
 
 1. En la pantalla de login toca **Registrarse** y crea una cuenta (correo + contraseña).
 2. Vuelve al login e **inicia sesión** con esas credenciales.

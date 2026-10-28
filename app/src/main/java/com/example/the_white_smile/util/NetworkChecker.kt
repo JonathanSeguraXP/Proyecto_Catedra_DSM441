@@ -1,4 +1,4 @@
-package com.example.the_white_smile
+package com.example.the_white_smile.util
 
 import android.content.Context
 import android.net.ConnectivityManager

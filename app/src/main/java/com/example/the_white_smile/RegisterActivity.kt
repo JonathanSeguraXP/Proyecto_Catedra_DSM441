@@ -13,6 +13,7 @@ import com.example.the_white_smile.core.isUserCancelled
 import com.example.the_white_smile.ui.register.RegisterEvent
 import com.example.the_white_smile.ui.register.RegisterUiState
 import com.example.the_white_smile.ui.register.RegisterViewModel
+import com.example.the_white_smile.util.FirebaseErrors
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
