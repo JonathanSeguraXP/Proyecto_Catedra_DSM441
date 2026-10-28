@@ -1,20 +1,46 @@
-# The White Smile 🦷
+# The White Smile
 
-Aplicación Android desarrollada en **Kotlin** para el Proyecto de Cátedra de la materia **DSM441**. El proyecto implementa el **módulo de login** con autenticación segura mediante **Firebase Authentication**.
+Aplicación móvil para Android desarrollada en Kotlin como Proyecto de Cátedra de la
+materia DSM441. El proyecto implementa el módulo de autenticación de usuarios mediante
+Firebase Authentication e incluye inicio de sesión con correo electrónico y contraseña,
+registro de cuentas, recuperación de contraseña, acceso con proveedores externos
+(Google y GitHub) y una pantalla de menú principal posterior al inicio de sesión.
 
-## ✨ Funcionalidades
+## Descripción general
 
-### Módulo de Login
-- **Inicio de sesión con usuario (correo electrónico) y contraseña**, validado en la nube con Firebase Authentication.
-- **Registro de nuevos usuarios** directamente desde la app (nombre, correo y contraseña).
-- **Recuperación de contraseña**: el usuario ingresa su correo y recibe un enlace de restablecimiento por email.
-- **Inicio de sesión con proveedores OAuth** (opcional según enunciado):
-  - **Google** Sign-In
-  - **GitHub** Sign-In
-- **Menú principal** con el logo de la app, mostrado tras un inicio de sesión válido (las opciones aún no están funcionales, según lo pedido en el enunciado).
-- **Cerrar sesión** para volver a la pantalla de login.
+La aplicación está organizada con el patrón Modelo-Vista-ViewModel (MVVM) y una
+separación por capas. Las pantallas delegan la lógica en sus respectivos ViewModel,
+que exponen el estado mediante flujos (`StateFlow`) y las acciones de una sola vez
+mediante eventos (`SharedFlow`). El acceso a los servicios de autenticación se
+centraliza en un repositorio, de modo que las Activity no dependen directamente de
+Firebase. Esta organización facilita las pruebas unitarias y permite reemplazar la
+implementación de datos sin modificar la interfaz de usuario.
 
-## 🛠️ Tecnologías
+## Funcionalidades
+
+### Autenticación
+
+- Inicio de sesión con correo electrónico y contraseña, validado con Firebase Authentication.
+- Registro de nuevos usuarios con nombre, correo electrónico y contraseña.
+- Recuperación de contraseña mediante un enlace de restablecimiento enviado por correo.
+- Inicio de sesión con Google a través de Credential Manager.
+- Inicio de sesión con GitHub mediante el flujo OAuth de Firebase.
+- Cierre de sesión con confirmación previa.
+- Validación del formato del correo electrónico y del estado de la conexión antes de
+  realizar cada operación.
+- Opción para recordar el correo electrónico en el dispositivo.
+
+### Menú principal
+
+- Acceso restringido a usuarios con una sesión activa; en caso contrario se redirige
+  al inicio de sesión.
+- Saludo personalizado con el nombre del usuario autenticado.
+- Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
+  historial, contacto y ayuda). Estas opciones se muestran como próximamente
+  disponibles, conforme al alcance definido en el enunciado.
+- Confirmación antes de salir de la aplicación.
+
+## Tecnologías utilizadas
 
 | Tecnología | Uso |
 |------------|-----|
@@ -22,124 +48,139 @@ Aplicación Android desarrollada en **Kotlin** para el Proyecto de Cátedra de l
 | Android SDK (minSdk 24, targetSdk 37) | Plataforma |
 | Material 3 | Interfaz de usuario |
 | Firebase Authentication | Autenticación de usuarios |
-| Firebase Auth OAuth (Google, GitHub) | Login con proveedores |
-| Android Credential Manager | Métodos de autenticación modernos |
-| MVVM + Kotlin Coroutines | Separación entre vista, estado y datos |
-| JUnit 4 + coroutines-test | Pruebas unitarias de los ViewModel |
+| Firebase Auth OAuth (Google, GitHub) | Inicio de sesión con proveedores |
+| Android Credential Manager | Gestión de credenciales |
+| MVVM y Kotlin Coroutines | Separación entre vista, estado y datos |
+| JUnit 4 y coroutines-test | Pruebas unitarias de los ViewModel |
 
-## 🏗️ Arquitectura
+## Arquitectura
 
-El proyecto sigue el patrón **MVVM** con una separación en capas:
+El proyecto se divide en las siguientes capas:
 
 | Capa | Paquete | Responsabilidad |
 |------|---------|-----------------|
-| Vista | `*Activity.kt` | Pinta la pantalla, escucha los eventos y navega. No accede a Firebase. |
-| Presentación | `ui/` | `ViewModel` con el estado (`StateFlow`) y los eventos de una sola vez (`SharedFlow`). |
-| Dominio | `domain/` | Contratos y modelos sin dependencias de Android (`ConnectivityChecker`, `EmailValidator`, `SessionUser`, `AuthResult`). |
-| Datos | `data/` | Contrato `AuthRepository` e implementaciones concretas: Firebase, estado de red y validación de correo. |
-| Utilidades | `core/`, `util/` | Inyección de dependencias manual, extensión de `Task` a corrutinas y traducción de errores. |
+| Vista | `*Activity.kt` | Presenta la pantalla, escucha los eventos y gestiona la navegación. No accede directamente a Firebase. |
+| Presentación | `ui/` | ViewModel con el estado (`StateFlow`) y los eventos de una sola vez (`SharedFlow`). |
+| Dominio | `domain/` | Contratos y modelos sin dependencias de Android: `ConnectivityChecker`, `EmailValidator`, `SessionUser` y `AuthResult`. |
+| Datos | `data/` | Contrato `AuthRepository` e implementaciones concretas: Firebase, estado de la red y validación del correo. |
+| Utilidades | `core/`, `util/` | Inyección de dependencias manual, adaptación de `Task` a corrutinas y traducción de errores. |
 
-Flujo de una acción: la Activity llama a un método del `ViewModel`, este valida, consulta el repositorio y actualiza el estado; la Activity reacciona con `render(state)` o `handleEvent(event)`. Las dependencias se arman a mano en `core/ServiceLocator.kt`.
+El flujo de una operación es el siguiente: la Activity invoca un método del ViewModel;
+este valida los datos, consulta el repositorio y actualiza el estado; la Activity
+reacciona mediante `render(state)` o `handleEvent(event)`. Las dependencias se
+construyen manualmente en `core/ServiceLocator.kt`.
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```
 app/src/main/java/com/example/the_white_smile/
-├── LoginActivity.kt              # Vista del inicio de sesión
-├── RegisterActivity.kt           # Vista del registro
-├── MenuActivity.kt               # Vista del menú principal
-├── core/
-│   ├── ServiceLocator.kt         # Inyección de dependencias manual
-│   ├── TaskExtensions.kt         # Task de Firebase -> corrutinas
-│   └── ErrorUtils.kt             # Errores que no deben mostrarse
-├── data/
-│   ├── AuthRepository.kt         # Contrato de autenticación
-│   ├── FirebaseAuthRepository.kt # Implementación con Firebase
-│   ├── AndroidConnectivityChecker.kt
-│   └── AndroidEmailValidator.kt
-├── domain/
-│   ├── AuthResult.kt
-│   ├── SessionUser.kt
-│   ├── ConnectivityChecker.kt
-│   └── EmailValidator.kt
-├── ui/
-│   ├── login/                    # LoginViewModel, estado y eventos
-│   ├── register/                 # RegisterViewModel, estado y eventos
-│   └── menu/                     # MenuViewModel, estado y eventos
-└── util/
-    ├── FirebaseErrors.kt         # Errores de Firebase en español
-    └── NetworkChecker.kt         # Estado de la conexión
+  LoginActivity.kt               # Vista del inicio de sesión
+  RegisterActivity.kt            # Vista del registro
+  MenuActivity.kt                # Vista del menú principal
+  core/
+    ServiceLocator.kt            # Inyección de dependencias manual
+    TaskExtensions.kt            # Adaptación de Task de Firebase a corrutinas
+    ErrorUtils.kt                # Errores que no deben mostrarse
+  data/
+    AuthRepository.kt            # Contrato de autenticación
+    FirebaseAuthRepository.kt    # Implementación con Firebase
+    AndroidConnectivityChecker.kt
+    AndroidEmailValidator.kt
+  domain/
+    AuthResult.kt
+    SessionUser.kt
+    ConnectivityChecker.kt
+    EmailValidator.kt
+  ui/
+    login/                       # LoginViewModel, estado y eventos
+    register/                    # RegisterViewModel, estado y eventos
+    menu/                        # MenuViewModel, estado y eventos
+  util/
+    FirebaseErrors.kt            # Traducción de errores de Firebase
+    NetworkChecker.kt            # Estado de la conexión
 
 app/src/test/java/com/example/the_white_smile/
-├── core/MainDispatcherRule.kt    # Dispatcher principal para tests
-└── ui/login/LoginViewModelTest.kt # Pruebas del LoginViewModel
+  core/
+    MainDispatcherRule.kt        # Dispatcher principal para las pruebas
+  ui/login/
+    LoginViewModelTest.kt        # Pruebas del LoginViewModel
 
 app/src/main/res/
-├── layout/
-│   ├── activity_login.xml        # Diseño del login
-│   ├── activity_register.xml     # Diseño del registro
-│   └── activity_menu.xml         # Diseño del menú
-├── values/                       # Strings, colores, temas
-└── drawable/                     # Iconos (Google, GitHub, etc.)
+  layout/
+    activity_login.xml           # Diseño del inicio de sesión
+    activity_register.xml        # Diseño del registro
+    activity_menu.xml            # Diseño del menú
+  values/                        # Cadenas de texto, colores y temas
+  drawable/                      # Iconos de la interfaz
 ```
 
-## 🔧 Requisitos
+## Requisitos
 
-- [Android Studio](https://developer.android.com/studio) (versión reciente).
-- Cuenta de [Firebase](https://console.firebase.google.com/).
-- Dispositivo Android (emulador o físico) con Android 7.0 o superior.
+- Android Studio en una versión reciente.
+- Cuenta de Firebase.
+- Dispositivo Android (físico o emulador) con Android 7.0 o superior.
+- Conexión a internet para las operaciones de autenticación.
 
-## 🚀 Configuración del proyecto
+## Configuración del proyecto
 
 ### 1. Clonar el repositorio
+
 ```bash
 git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
 ```
 
 ### 2. Configurar Firebase
-1. Crea un proyecto en [Firebase Console](https://console.firebase.google.com/).
-2. Agrega una app Android con el paquete `com.example.the_white_smile`.
-3. Descarga el archivo `google-services.json` y colócalo en la carpeta `app/`.
-4. En **Authentication → Sign-in method**, habilita:
-   - **Email/Password**
-   - **Google** (si deseas el botón de Google)
-   - **GitHub** (configurando un OAuth App en GitHub, si deseas ese botón)
-5. Registra el **SHA-1** de tu firma de depuración en **Configuración del proyecto → Tus apps** para que Google Sign-In funcione.
+
+1. Crear un proyecto en Firebase Console.
+2. Agregar una aplicación Android con el paquete `com.example.the_white_smile`.
+3. Descargar el archivo `google-services.json` y ubicarlo en la carpeta `app/`.
+4. En Authentication, sección Sign-in method, habilitar los métodos:
+   - Correo electrónico y contraseña.
+   - Google, para el inicio de sesión con Google.
+   - GitHub, configurando previamente una OAuth App en GitHub.
+5. Registrar el SHA-1 de la firma de depuración en la configuración del proyecto
+   para que el inicio de sesión con Google funcione correctamente.
 
 ### 3. Compilar y ejecutar
-Abre el proyecto en Android Studio, espera la sincronización de Gradle y presiona **Run ▶**.
 
-## 🧪 Cómo probar
+Abrir el proyecto en Android Studio, esperar la sincronización de Gradle y ejecutar
+la aplicación con el botón Run.
 
-### Pruebas automáticas
+## Pruebas
+
+### Pruebas unitarias
 
 ```bash
 ./gradlew :app:testDebugUnitTest
 ```
 
-`LoginViewModelTest` cubre las validaciones, la falta de conexión, el estado de carga y los casos de éxito y error usando dobles de prueba: no requiere red, Firebase ni emulador.
+`LoginViewModelTest` verifica las validaciones de los campos, la falta de conexión,
+el estado de carga y los casos de éxito y error. Las pruebas utilizan dobles de
+prueba, por lo que no requieren conexión, Firebase ni emulador.
 
 ### Prueba manual
 
-1. En la pantalla de login toca **Registrarse** y crea una cuenta (correo + contraseña).
-2. Vuelve al login e **inicia sesión** con esas credenciales.
-3. Eres dirigido al **menú principal** con el logo de la app.
-4. Para **recuperar la contraseña**, escribe tu correo y toca "¿Olvidaste tu contraseña?".
-5. También puedes iniciar con los botones de **Google** o **GitHub**.
+1. En la pantalla de inicio de sesión, seleccionar Registrarse y crear una cuenta
+   con correo electrónico y contraseña.
+2. Volver al inicio de sesión e ingresar con esas credenciales.
+3. Verificar la redirección al menú principal y el saludo con el nombre del usuario.
+4. Probar la recuperación de contraseña ingresando un correo registrado.
+5. Probar el inicio de sesión con Google y con GitHub.
+6. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
-## 📋 Enunciado cubierto
+## Requisitos del enunciado
 
-- [x] Usuario (correo electrónico) y contraseña.
-- [x] Opción para recuperar password (correo de restablecimiento).
-- [x] Opciones para registrarse mediante Google y GitHub.
-- [x] Pantalla de menú principal tras un usuario válido (aunque las opciones no funcionen aún).
-- [x] Logo de la app en la pantalla del menú.
-- [x] Módulo de login desarrollado en Kotlin con Android Studio.
+- [x] Inicio de sesión con usuario (correo electrónico) y contraseña.
+- [x] Recuperación de contraseña mediante correo de restablecimiento.
+- [x] Registro de usuarios mediante correo electrónico, Google y GitHub.
+- [x] Pantalla de menú principal posterior a un inicio de sesión válido.
+- [x] Logotipo de la aplicación en la pantalla del menú.
+- [x] Módulo de inicio de sesión desarrollado en Kotlin con Android Studio.
 
-## 👥 Integrante
+## Autor
 
-- Jonathan Josue Segura Ramirez SR230847
+- Jonathan Josue Segura Ramirez, carné SR230847
 
 ---
 
-*Proyecto académico — materia DSM441.*
+Proyecto académico correspondiente a la materia DSM441.
