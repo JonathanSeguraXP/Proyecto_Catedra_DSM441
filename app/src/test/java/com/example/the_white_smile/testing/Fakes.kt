@@ -1,12 +1,18 @@
 package com.example.the_white_smile.testing
 
 import android.app.Activity
+import com.example.the_white_smile.data.AppointmentRepository
 import com.example.the_white_smile.data.AuthRepository
+import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.ConnectivityChecker
 import com.example.the_white_smile.domain.EmailValidator
 import com.example.the_white_smile.domain.SessionUser
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Repositorio falso para las pruebas de los ViewModel.
@@ -110,4 +116,42 @@ class FakeEmailValidator : EmailValidator {
     var valid = true
 
     override fun isValid(email: String): Boolean = valid
+}
+
+/**
+ * Repositorio falso de citas: expone un flujo controlable y registra
+ * las llamadas de creacion y cancelacion.
+ */
+class FakeAppointmentRepository : AppointmentRepository {
+
+    val appointments = MutableStateFlow<List<Appointment>>(emptyList())
+
+    var observeError: Throwable? = null
+
+    var createCalls = 0
+    var lastService: String? = null
+    var lastStartAt: Long? = null
+    var createResult: Result<Unit> = Result.success(Unit)
+
+    var cancelCalls = 0
+    var lastCancelledId: String? = null
+    var cancelResult: Result<Unit> = Result.success(Unit)
+
+    override fun observeAppointments(): Flow<List<Appointment>> {
+        val error = observeError
+        return if (error != null) flow { throw error } else appointments.asStateFlow()
+    }
+
+    override suspend fun createAppointment(service: String, startAt: Long): Result<Unit> {
+        createCalls++
+        lastService = service
+        lastStartAt = startAt
+        return createResult
+    }
+
+    override suspend fun cancelAppointment(id: String): Result<Unit> {
+        cancelCalls++
+        lastCancelledId = id
+        return cancelResult
+    }
 }

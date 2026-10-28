@@ -171,7 +171,11 @@ class MenuActivity : AppCompatActivity() {
 
     private companion object {
         val MENU_OPTIONS = listOf(
-            MenuOption(R.string.menu_option_appointments, android.R.drawable.ic_menu_my_calendar),
+            MenuOption(
+                R.string.menu_option_appointments,
+                android.R.drawable.ic_menu_my_calendar,
+                AppointmentsActivity::class.java
+            ),
             MenuOption(R.string.menu_option_treatments, android.R.drawable.ic_menu_agenda),
             MenuOption(
                 R.string.menu_option_profile,

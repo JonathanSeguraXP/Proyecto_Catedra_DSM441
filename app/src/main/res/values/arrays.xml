@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Servicios disponibles para agendar una cita -->
+    <string-array name="appointment_services">
+        <item>Consulta general</item>
+        <item>Limpieza dental</item>
+        <item>Blanqueamiento</item>
+        <item>Ortodoncia</item>
+        <item>Endodoncia</item>
+        <item>Extracción</item>
+        <item>Implante dental</item>
+        <item>Revisión de rutina</item>
+    </string-array>
+</resources>

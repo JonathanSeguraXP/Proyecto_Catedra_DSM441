@@ -4,7 +4,8 @@ Aplicación móvil para Android desarrollada en Kotlin como Proyecto de Cátedra
 materia DSM441. El proyecto implementa el módulo de autenticación de usuarios mediante
 Firebase Authentication e incluye inicio de sesión con correo electrónico y contraseña,
 registro de cuentas, recuperación de contraseña, acceso con proveedores externos
-(Google y GitHub) y una pantalla de menú principal posterior al inicio de sesión.
+(Google y GitHub), una pantalla de menú principal posterior al inicio de sesión, la
+gestión del perfil del usuario y la administración de citas con Cloud Firestore.
 
 ## Descripción general
 
@@ -36,8 +37,9 @@ implementación de datos sin modificar la interfaz de usuario.
   al inicio de sesión.
 - Saludo personalizado con el nombre del usuario autenticado.
 - Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
-  historial, contacto y ayuda). La opción Perfil abre su pantalla; el resto se
-  muestra como próximamente disponible, conforme al alcance definido en el enunciado.
+  historial, contacto y ayuda). Las opciones Citas y Perfil abren sus pantallas; el
+  resto se muestra como próximamente disponible, conforme al alcance definido en el
+  enunciado.
 - Confirmación antes de salir de la aplicación.
 
 ### Perfil de usuario
@@ -49,6 +51,18 @@ implementación de datos sin modificar la interfaz de usuario.
 - Actualización automática del estado al volver a la pantalla, y del saludo del menú
   después de editar el nombre.
 
+### Citas
+
+- Listado en tiempo real de las citas del usuario autenticado.
+- Registro de una nueva cita con servicio, fecha y hora, mediante selectores nativos.
+- Validaciones de servicio vacío, fecha anterior al momento actual y solapamiento con
+  otra cita pendiente del mismo usuario.
+- Cancelación de citas pendientes con confirmación previa; el registro se conserva con
+  estado `CANCELLED` en lugar de eliminarse.
+- Estados de la cita: pendiente, cancelada y completada.
+- Persistencia en Cloud Firestore, bajo `users/{uid}/appointments`, de modo que cada
+  usuario solo accede a sus propios turnos.
+
 ## Tecnologías utilizadas
 
 | Tecnología | Uso |
@@ -57,6 +71,7 @@ implementación de datos sin modificar la interfaz de usuario.
 | Android SDK (minSdk 24, targetSdk 37) | Plataforma |
 | Material 3 | Interfaz de usuario |
 | Firebase Authentication | Autenticación de usuarios |
+| Cloud Firestore | Persistencia de las citas por usuario |
 | Firebase Auth OAuth (Google, GitHub) | Inicio de sesión con proveedores |
 | Android Credential Manager | Gestión de credenciales |
 | MVVM y Kotlin Coroutines | Separación entre vista, estado y datos |
@@ -70,9 +85,9 @@ El proyecto se divide en las siguientes capas:
 |------|---------|-----------------|
 | Vista | `*Activity.kt` | Presenta la pantalla, escucha los eventos y gestiona la navegación. No accede directamente a Firebase. |
 | Presentación | `ui/` | ViewModel con el estado (`StateFlow`) y los eventos de una sola vez (`SharedFlow`). |
-| Dominio | `domain/` | Contratos y modelos sin dependencias de Android: `ConnectivityChecker`, `EmailValidator`, `SessionUser` y `AuthResult`. |
-| Datos | `data/` | Contrato `AuthRepository` e implementaciones concretas: Firebase, estado de la red y validación del correo. |
-| Utilidades | `core/`, `util/` | Inyección de dependencias manual, adaptación de `Task` a corrutinas y traducción de errores. |
+| Dominio | `domain/` | Contratos y modelos sin dependencias de Android: `ConnectivityChecker`, `EmailValidator`, `SessionUser`, `AuthResult`, `Appointment` y `AppointmentStatus`. |
+| Datos | `data/` | Contratos `AuthRepository` y `AppointmentRepository` con sus implementaciones: Firebase Auth, Cloud Firestore, estado de la red y validación del correo. |
+| Utilidades | `core/`, `util/` | Inyección de dependencias manual, adaptación de `Task` a corrutinas, formatos de fecha y traducción de errores de Auth y Firestore. |
 
 El flujo de una operación es el siguiente: la Activity invoca un método del ViewModel;
 este valida los datos, consulta el repositorio y actualiza el estado; la Activity
@@ -87,6 +102,7 @@ app/src/main/java/com/example/the_white_smile/
   RegisterActivity.kt            # Vista del registro
   MenuActivity.kt                # Vista del menú principal
   ProfileActivity.kt             # Vista del perfil de usuario
+  AppointmentsActivity.kt        # Vista de las citas
   core/
     ServiceLocator.kt            # Inyección de dependencias manual
     TaskExtensions.kt            # Adaptación de Task de Firebase a corrutinas
@@ -94,6 +110,8 @@ app/src/main/java/com/example/the_white_smile/
   data/
     AuthRepository.kt            # Contrato de autenticación
     FirebaseAuthRepository.kt    # Implementación con Firebase
+    AppointmentRepository.kt     # Contrato de las citas
+    FirestoreAppointmentRepository.kt  # Implementación con Cloud Firestore
     AndroidConnectivityChecker.kt
     AndroidEmailValidator.kt
   domain/
@@ -101,13 +119,17 @@ app/src/main/java/com/example/the_white_smile/
     SessionUser.kt
     ConnectivityChecker.kt
     EmailValidator.kt
+    Appointment.kt               # Modelo y estados de una cita
   ui/
     login/                       # LoginViewModel, estado y eventos
     register/                    # RegisterViewModel, estado y eventos
     menu/                        # MenuViewModel, estado y eventos
     profile/                     # ProfileViewModel, estado y eventos
+    appointments/                # AppointmentsViewModel, adaptador y eventos
   util/
-    FirebaseErrors.kt            # Traducción de errores de Firebase
+    FirebaseErrors.kt            # Traducción de errores de Firebase Auth
+    FirestoreErrors.kt           # Traducción de errores de Cloud Firestore
+    DateFormats.kt               # Formatos de fecha y hora
     NetworkChecker.kt            # Estado de la conexión
 
 app/src/test/java/com/example/the_white_smile/
@@ -119,13 +141,19 @@ app/src/test/java/com/example/the_white_smile/
     LoginViewModelTest.kt        # Pruebas del LoginViewModel
   ui/profile/
     ProfileViewModelTest.kt      # Pruebas del ProfileViewModel
+  ui/appointments/
+    AppointmentsViewModelTest.kt # Pruebas del AppointmentsViewModel
 
 app/src/main/res/
   layout/
     activity_login.xml           # Diseño del inicio de sesión
     activity_register.xml        # Diseño del registro
     activity_menu.xml            # Diseño del menú
-  values/                        # Cadenas de texto, colores y temas
+    activity_profile.xml         # Diseño del perfil
+    activity_appointments.xml    # Diseño de la lista de citas
+    item_appointment.xml         # Elemento de la lista de citas
+    dialog_new_appointment.xml   # Diálogo de nueva cita
+  values/                        # Cadenas de texto, arreglos, colores y temas
   drawable/                      # Iconos de la interfaz
 ```
 
@@ -134,7 +162,7 @@ app/src/main/res/
 - Android Studio en una versión reciente.
 - Cuenta de Firebase.
 - Dispositivo Android (físico o emulador) con Android 7.0 o superior.
-- Conexión a internet para las operaciones de autenticación.
+- Conexión a internet para las operaciones de autenticación y de citas.
 
 ## Configuración del proyecto
 
@@ -155,6 +183,20 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    - GitHub, configurando previamente una OAuth App en GitHub.
 5. Registrar el SHA-1 de la firma de depuración en la configuración del proyecto
    para que el inicio de sesión con Google funcione correctamente.
+6. En Firestore Database, crear la base de datos y publicar las reglas que limitan
+   cada documento al usuario autenticado:
+
+```
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/appointments/{appointmentId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+```
 
 ### 3. Compilar y ejecutar
 
@@ -172,8 +214,10 @@ la aplicación con el botón Run.
 `LoginViewModelTest` verifica las validaciones de los campos, la falta de conexión,
 el estado de carga y los casos de éxito y error. `ProfileViewModelTest` cubre la carga
 de la sesión, la edición del nombre, el envío de la verificación y el cambio de
-contraseña. Las pruebas utilizan dobles de prueba, por lo que no requieren conexión,
-Firebase ni emulador.
+contraseña. `AppointmentsViewModelTest` comprueba la observación de las citas, las
+validaciones de servicio y fecha, el solapamiento de horarios, la creación, la
+cancelación y el manejo de errores. Las pruebas utilizan dobles de prueba, por lo que
+no requieren conexión, Firebase ni emulador.
 
 ### Prueba manual
 
@@ -185,7 +229,10 @@ Firebase ni emulador.
 5. Probar el inicio de sesión con Google y con GitHub.
 6. Abrir la opción Perfil, editar el nombre y verificar que el saludo del menú se actualice.
 7. Probar el reenvío del correo de verificación y el cambio de contraseña.
-8. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+8. Abrir la opción Citas, agendar un turno y comprobar que aparezca en la lista.
+9. Intentar agendar otra cita en el mismo horario y verificar el aviso de conflicto.
+10. Cancelar una cita pendiente y confirmar el cambio de estado.
+11. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -195,6 +242,7 @@ Firebase ni emulador.
 - [x] Pantalla de menú principal posterior a un inicio de sesión válido.
 - [x] Logotipo de la aplicación en la pantalla del menú.
 - [x] Módulo de inicio de sesión desarrollado en Kotlin con Android Studio.
+- [x] Gestión de citas con persistencia en Cloud Firestore.
 
 ## Autor
 

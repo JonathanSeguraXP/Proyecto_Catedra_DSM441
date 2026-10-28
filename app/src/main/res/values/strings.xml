@@ -77,6 +77,39 @@
     <string name="loading_verification">Enviando verificación…</string>
     <string name="loading_password">Enviando correo…</string>
 
+    <!-- Citas -->
+    <string name="appointments_title">Mis citas</string>
+    <string name="appointments_empty_title">Aún no tienes citas</string>
+    <string name="appointments_empty_message">Agenda tu primer turno con el botón +</string>
+    <string name="appointments_new">Agendar cita</string>
+    <string name="appointments_dialog_title">Nueva cita</string>
+    <string name="appointments_service_hint">Servicio</string>
+    <string name="appointments_pick_date">Seleccionar fecha</string>
+    <string name="appointments_pick_time">Seleccionar hora</string>
+    <string name="appointments_dialog_confirm">Agendar</string>
+    <string name="appointments_error_datetime">Selecciona la fecha y la hora de la cita</string>
+    <string name="appointments_error_service">Selecciona un servicio</string>
+    <string name="appointments_error_past">La fecha y hora deben ser posteriores al momento actual</string>
+    <string name="appointments_error_conflict">Ya tienes una cita pendiente en ese horario</string>
+    <string name="appointments_cancel_title">Cancelar cita</string>
+    <string name="appointments_cancel_message">¿Deseas cancelar esta cita? Esta acción no se puede deshacer.</string>
+    <string name="appointments_cancel_confirm">Sí, cancelar</string>
+    <string name="appointments_cancel_action">Cancelar</string>
+    <string name="appointments_dialog_hint">La cita se guarda con la fecha y hora de tu dispositivo.</string>
+    <string name="appointments_status_pending">Pendiente</string>
+    <string name="appointments_status_cancelled">Cancelada</string>
+    <string name="appointments_status_completed">Completada</string>
+    <string name="appointment_created">Cita agendada correctamente</string>
+    <string name="appointment_cancelled">Cita cancelada</string>
+    <string name="loading_appointments">Cargando citas…</string>
+    <string name="loading_saving_appointment">Agendando cita…</string>
+    <string name="loading_cancel_appointment">Cancelando cita…</string>
+
+    <!-- Errores de Firestore (traducidos) -->
+    <string name="error_firestore_permission">No tienes permisos para acceder a tus citas. Revisa las reglas de Firestore</string>
+    <string name="error_firestore_not_found">La cita ya no existe</string>
+    <string name="error_firestore_unavailable">Firestore no está habilitado en Firebase Console</string>
+
     <!-- Diálogos -->
     <string name="exit_title">Cerrar aplicación</string>
     <string name="exit_message">¿Deseas salir de The White Smile?</string>
