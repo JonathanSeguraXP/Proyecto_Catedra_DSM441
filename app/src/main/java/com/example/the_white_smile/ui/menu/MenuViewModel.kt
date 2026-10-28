@@ -32,6 +32,13 @@ class MenuViewModel(
     /** La pantalla solo debe mostrarse con una sesion activa. */
     fun hasActiveSession(): Boolean = repository.isLoggedIn()
 
+    /** Vuelve a leer el nombre, por si se edito desde la pantalla de perfil. */
+    fun refresh() {
+        _uiState.value = MenuUiState(
+            displayName = repository.currentUser?.displayName?.trim()?.ifBlank { null }
+        )
+    }
+
     fun logout() {
         repository.signOut()
         _events.tryEmit(MenuEvent.LoggedOut)

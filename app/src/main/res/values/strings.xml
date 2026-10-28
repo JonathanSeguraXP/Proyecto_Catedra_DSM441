@@ -59,6 +59,24 @@
     <string name="menu_option_help">Ayuda</string>
     <string name="menu_coming_soon">Próximamente disponible</string>
 
+    <!-- Perfil -->
+    <string name="profile_title">Mi perfil</string>
+    <string name="profile_email_verified">Correo verificado</string>
+    <string name="profile_email_unverified">Correo sin verificar</string>
+    <string name="profile_btn_save">Guardar cambios</string>
+    <string name="profile_btn_verify_email">Verificar correo</string>
+    <string name="profile_btn_change_password">Cambiar contraseña</string>
+    <string name="profile_password_hint">Te enviaremos un correo para restablecer la contraseña</string>
+    <string name="profile_name_updated">Nombre actualizado correctamente</string>
+    <string name="profile_name_unchanged">El nombre no cambió</string>
+    <string name="profile_verification_sent">Te enviamos un correo de verificación</string>
+    <string name="profile_email_already_verified">Tu correo ya está verificado</string>
+    <string name="profile_error_name_empty">Ingresa tu nombre</string>
+    <string name="profile_error_name_too_long">El nombre es demasiado largo</string>
+    <string name="loading_profile">Guardando cambios…</string>
+    <string name="loading_verification">Enviando verificación…</string>
+    <string name="loading_password">Enviando correo…</string>
+
     <!-- Diálogos -->
     <string name="exit_title">Cerrar aplicación</string>
     <string name="exit_message">¿Deseas salir de The White Smile?</string>

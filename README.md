@@ -36,9 +36,18 @@ implementación de datos sin modificar la interfaz de usuario.
   al inicio de sesión.
 - Saludo personalizado con el nombre del usuario autenticado.
 - Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
-  historial, contacto y ayuda). Estas opciones se muestran como próximamente
-  disponibles, conforme al alcance definido en el enunciado.
+  historial, contacto y ayuda). La opción Perfil abre su pantalla; el resto se
+  muestra como próximamente disponible, conforme al alcance definido en el enunciado.
 - Confirmación antes de salir de la aplicación.
+
+### Perfil de usuario
+
+- Visualización del nombre, el correo electrónico y el estado de verificación de la cuenta.
+- Edición del nombre con validaciones de campo vacío, longitud máxima y nombre sin cambios.
+- Reenvío del correo de verificación de la cuenta.
+- Cambio de contraseña mediante un enlace de restablecimiento enviado por correo.
+- Actualización automática del estado al volver a la pantalla, y del saludo del menú
+  después de editar el nombre.
 
 ## Tecnologías utilizadas
 
@@ -77,6 +86,7 @@ app/src/main/java/com/example/the_white_smile/
   LoginActivity.kt               # Vista del inicio de sesión
   RegisterActivity.kt            # Vista del registro
   MenuActivity.kt                # Vista del menú principal
+  ProfileActivity.kt             # Vista del perfil de usuario
   core/
     ServiceLocator.kt            # Inyección de dependencias manual
     TaskExtensions.kt            # Adaptación de Task de Firebase a corrutinas
@@ -95,6 +105,7 @@ app/src/main/java/com/example/the_white_smile/
     login/                       # LoginViewModel, estado y eventos
     register/                    # RegisterViewModel, estado y eventos
     menu/                        # MenuViewModel, estado y eventos
+    profile/                     # ProfileViewModel, estado y eventos
   util/
     FirebaseErrors.kt            # Traducción de errores de Firebase
     NetworkChecker.kt            # Estado de la conexión
@@ -102,8 +113,12 @@ app/src/main/java/com/example/the_white_smile/
 app/src/test/java/com/example/the_white_smile/
   core/
     MainDispatcherRule.kt        # Dispatcher principal para las pruebas
+  testing/
+    Fakes.kt                     # Dobles de repositorio, red y validador
   ui/login/
     LoginViewModelTest.kt        # Pruebas del LoginViewModel
+  ui/profile/
+    ProfileViewModelTest.kt      # Pruebas del ProfileViewModel
 
 app/src/main/res/
   layout/
@@ -155,8 +170,10 @@ la aplicación con el botón Run.
 ```
 
 `LoginViewModelTest` verifica las validaciones de los campos, la falta de conexión,
-el estado de carga y los casos de éxito y error. Las pruebas utilizan dobles de
-prueba, por lo que no requieren conexión, Firebase ni emulador.
+el estado de carga y los casos de éxito y error. `ProfileViewModelTest` cubre la carga
+de la sesión, la edición del nombre, el envío de la verificación y el cambio de
+contraseña. Las pruebas utilizan dobles de prueba, por lo que no requieren conexión,
+Firebase ni emulador.
 
 ### Prueba manual
 
@@ -166,7 +183,9 @@ prueba, por lo que no requieren conexión, Firebase ni emulador.
 3. Verificar la redirección al menú principal y el saludo con el nombre del usuario.
 4. Probar la recuperación de contraseña ingresando un correo registrado.
 5. Probar el inicio de sesión con Google y con GitHub.
-6. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+6. Abrir la opción Perfil, editar el nombre y verificar que el saludo del menú se actualice.
+7. Probar el reenvío del correo de verificación y el cambio de contraseña.
+8. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 

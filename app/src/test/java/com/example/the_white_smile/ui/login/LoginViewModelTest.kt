@@ -1,13 +1,12 @@
 package com.example.the_white_smile.ui.login
 
-import android.app.Activity
 import com.example.the_white_smile.R
 import com.example.the_white_smile.core.MainDispatcherRule
-import com.example.the_white_smile.data.AuthRepository
 import com.example.the_white_smile.domain.AuthResult
-import com.example.the_white_smile.domain.ConnectivityChecker
-import com.example.the_white_smile.domain.EmailValidator
 import com.example.the_white_smile.domain.SessionUser
+import com.example.the_white_smile.testing.FakeAuthRepository
+import com.example.the_white_smile.testing.FakeConnectivityChecker
+import com.example.the_white_smile.testing.FakeEmailValidator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -144,65 +143,5 @@ class LoginViewModelTest {
 
         repository.loggedIn = false
         assertFalse(createViewModel().hasActiveSession())
-    }
-
-    // ---------- Dobles de prueba ----------
-
-    private class FakeAuthRepository : AuthRepository {
-
-        var loggedIn = false
-        var signInCalls = 0
-        var lastEmail: String? = null
-        var signInResult: AuthResult<SessionUser> =
-            AuthResult.Success(SessionUser("uid", "ana@correo.com", "Ana"))
-        var signInGate: CompletableDeferred<Unit>? = null
-
-        override val currentUser: SessionUser?
-            get() = if (loggedIn) SessionUser("uid", "ana@correo.com", "Ana") else null
-
-        override fun isLoggedIn(): Boolean = loggedIn
-
-        override suspend fun signInWithEmail(
-            email: String,
-            password: String
-        ): AuthResult<SessionUser> {
-            signInCalls++
-            lastEmail = email
-            signInGate?.await()
-            return signInResult
-        }
-
-        override suspend fun registerWithEmail(
-            name: String,
-            email: String,
-            password: String
-        ): AuthResult<SessionUser> = error("No se usa en estas pruebas")
-
-        override suspend fun signInWithGoogleIdToken(idToken: String): AuthResult<SessionUser> =
-            error("No se usa en estas pruebas")
-
-        override suspend fun signInWithGithub(activity: Activity): AuthResult<SessionUser> =
-            error("No se usa en estas pruebas")
-
-        override suspend fun sendPasswordReset(email: String): AuthResult<Unit> =
-            error("No se usa en estas pruebas")
-
-        override fun signOut() {
-            loggedIn = false
-        }
-    }
-
-    private class FakeConnectivityChecker : ConnectivityChecker {
-
-        var online = true
-
-        override fun isOnline(): Boolean = online
-    }
-
-    private class FakeEmailValidator : EmailValidator {
-
-        var valid = true
-
-        override fun isValid(email: String): Boolean = valid
     }
 }

@@ -16,6 +16,9 @@ interface AuthRepository {
     /** True si existe una sesion activa. */
     fun isLoggedIn(): Boolean
 
+    /** True si el correo de la cuenta ya fue verificado. */
+    fun isEmailVerified(): Boolean
+
     suspend fun signInWithEmail(email: String, password: String): AuthResult<SessionUser>
 
     suspend fun registerWithEmail(
@@ -29,6 +32,13 @@ interface AuthRepository {
     suspend fun signInWithGithub(activity: Activity): AuthResult<SessionUser>
 
     suspend fun sendPasswordReset(email: String): AuthResult<Unit>
+
+    suspend fun updateDisplayName(name: String): AuthResult<SessionUser>
+
+    suspend fun sendEmailVerification(): AuthResult<Unit>
+
+    /** Vuelve a leer el usuario desde el servidor (por ejemplo, tras verificar el correo). */
+    suspend fun reloadUser(): AuthResult<Unit>
 
     fun signOut()
 }

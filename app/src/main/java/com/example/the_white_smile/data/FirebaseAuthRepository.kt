@@ -21,6 +21,8 @@ class FirebaseAuthRepository(
 
     override fun isLoggedIn(): Boolean = auth.currentUser != null
 
+    override fun isEmailVerified(): Boolean = auth.currentUser?.isEmailVerified == true
+
     override suspend fun signInWithEmail(
         email: String,
         password: String
@@ -82,6 +84,30 @@ class FirebaseAuthRepository(
 
     override suspend fun sendPasswordReset(email: String): AuthResult<Unit> = runAuth {
         auth.sendPasswordResetEmail(email).awaitResult()
+    }
+
+    override suspend fun updateDisplayName(name: String): AuthResult<SessionUser> = runAuth {
+        val cleanName = name.trim()
+        val user = auth.currentUser
+            ?: throw IllegalStateException("No hay una sesion activa")
+        user.updateProfile(
+            UserProfileChangeRequest.Builder()
+                .setDisplayName(cleanName)
+                .build()
+        ).awaitResult()
+        user.toSessionUser(cleanName)
+    }
+
+    override suspend fun sendEmailVerification(): AuthResult<Unit> = runAuth {
+        val user = auth.currentUser
+            ?: throw IllegalStateException("No hay una sesion activa")
+        user.sendEmailVerification().awaitResult()
+    }
+
+    override suspend fun reloadUser(): AuthResult<Unit> = runAuth {
+        val user = auth.currentUser
+            ?: throw IllegalStateException("No hay una sesion activa")
+        user.reload().awaitResult()
     }
 
     override fun signOut() {

@@ -50,7 +50,12 @@ class MenuActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         // Sin sesion activa no tiene sentido mostrar el menu.
-        if (!viewModel.hasActiveSession()) goToLogin()
+        if (!viewModel.hasActiveSession()) {
+            goToLogin()
+            return
+        }
+        // Mantiene el saludo al dia despues de editar el perfil.
+        viewModel.refresh()
     }
 
     // ---------- Barra superior ----------
@@ -110,7 +115,14 @@ class MenuActivity : AppCompatActivity() {
             val item = inflater.inflate(R.layout.item_menu_option, grid, false)
             item.findViewById<ImageView>(R.id.ivOptionIcon).setImageResource(option.icon)
             item.findViewById<TextView>(R.id.tvOptionLabel).setText(option.label)
-            item.setOnClickListener { toast(R.string.menu_coming_soon) }
+            item.setOnClickListener {
+                val destination = option.destination
+                if (destination != null) {
+                    startActivity(Intent(this, destination))
+                } else {
+                    toast(R.string.menu_coming_soon)
+                }
+            }
             grid.addView(item)
         }
     }
@@ -151,13 +163,21 @@ class MenuActivity : AppCompatActivity() {
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
     }
 
-    private data class MenuOption(val label: Int, val icon: Int)
+    private data class MenuOption(
+        val label: Int,
+        val icon: Int,
+        val destination: Class<*>? = null
+    )
 
     private companion object {
         val MENU_OPTIONS = listOf(
             MenuOption(R.string.menu_option_appointments, android.R.drawable.ic_menu_my_calendar),
             MenuOption(R.string.menu_option_treatments, android.R.drawable.ic_menu_agenda),
-            MenuOption(R.string.menu_option_profile, android.R.drawable.ic_menu_myplaces),
+            MenuOption(
+                R.string.menu_option_profile,
+                android.R.drawable.ic_menu_myplaces,
+                ProfileActivity::class.java
+            ),
             MenuOption(R.string.menu_option_history, android.R.drawable.ic_menu_recent_history),
             MenuOption(R.string.menu_option_contact, android.R.drawable.ic_dialog_email),
             MenuOption(R.string.menu_option_help, android.R.drawable.ic_menu_help)
