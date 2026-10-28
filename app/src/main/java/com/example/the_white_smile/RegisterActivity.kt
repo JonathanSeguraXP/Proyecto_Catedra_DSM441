@@ -4,15 +4,26 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.the_white_smile.core.isUserCancelled
+import com.example.the_white_smile.ui.register.RegisterEvent
+import com.example.the_white_smile.ui.register.RegisterUiState
+import com.example.the_white_smile.ui.register.RegisterViewModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest
+import kotlinx.coroutines.launch
 
+/**
+ * Pantalla de registro.
+ * Solo se encarga de la vista: delega validaciones y llamadas a [RegisterViewModel].
+ */
 class RegisterActivity : AppCompatActivity() {
 
-    private lateinit var auth: FirebaseAuth
+    private val viewModel: RegisterViewModel by viewModels { RegisterViewModel.factory(this) }
 
     private lateinit var etName: TextInputEditText
     private lateinit var etEmail: TextInputEditText
@@ -27,8 +38,14 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
-        auth = FirebaseAuth.getInstance()
+        bindViews()
+        setupListeners()
+        observeViewModel()
+    }
 
+    // ---------- Vista ----------
+
+    private fun bindViews() {
         etName = findViewById(R.id.etName)
         etEmail = findViewById(R.id.etRegisterEmail)
         etPassword = findViewById(R.id.etRegisterPassword)
@@ -37,84 +54,58 @@ class RegisterActivity : AppCompatActivity() {
         btnBack = findViewById(R.id.btnBackToLogin)
         layoutLoading = findViewById(R.id.layoutLoading)
         tvLoading = findViewById(R.id.tvLoading)
+    }
 
-        btnCreate.setOnClickListener { register() }
+    private fun setupListeners() {
+        btnCreate.setOnClickListener {
+            viewModel.register(
+                name = etName.text?.toString().orEmpty(),
+                email = etEmail.text?.toString().orEmpty(),
+                password = etPassword.text?.toString().orEmpty(),
+                confirm = etConfirm.text?.toString().orEmpty()
+            )
+        }
         btnBack.setOnClickListener { finish() }
     }
 
-    private fun register() {
-        val name = etName.text?.toString()?.trim().orEmpty()
-        val email = etEmail.text?.toString()?.trim().orEmpty()
-        val password = etPassword.text?.toString().orEmpty()
-        val confirm = etConfirm.text?.toString().orEmpty()
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { viewModel.uiState.collect(::render) }
+                launch { viewModel.events.collect(::handleEvent) }
+            }
+        }
+    }
 
-        if (name.isEmpty()) {
-            Toast.makeText(this, R.string.register_error_name_empty, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
-            Toast.makeText(this, R.string.register_error_empty, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, R.string.login_error_invalid_email, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (password != confirm) {
-            Toast.makeText(this, R.string.register_password_mismatch, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (password.length < MIN_PASSWORD_LENGTH) {
-            Toast.makeText(this, R.string.register_password_short, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!isOnline()) {
-            return
-        }
+    private fun render(state: RegisterUiState) {
+        tvLoading.setText(state.loadingMessage)
+        if (state.isLoading) showLoading() else hideLoading()
+    }
 
-        btnCreate.isEnabled = false
-        showLoading(getString(R.string.loading_register))
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    saveDisplayName(name)
-                } else {
-                    hideLoading()
-                    btnCreate.isEnabled = true
-                    Toast.makeText(
-                        this,
-                        FirebaseErrors.message(this, task.exception),
-                        Toast.LENGTH_LONG
-                    ).show()
+    private fun handleEvent(event: RegisterEvent) {
+        when (event) {
+            is RegisterEvent.Message -> toastShort(event.messageRes)
+            is RegisterEvent.Error -> {
+                if (!event.cause.isUserCancelled()) {
+                    toastLong(FirebaseErrors.message(this, event.cause))
                 }
             }
-    }
-
-    /**
-     * Guarda el nombre del usuario antes de volver al login, para que el menu
-     * principal pueda saludarlo por su nombre.
-     */
-    private fun saveDisplayName(name: String) {
-        val user = auth.currentUser
-        val profile = UserProfileChangeRequest.Builder().setDisplayName(name).build()
-        user?.updateProfile(profile)?.addOnCompleteListener {
-            hideLoading()
-            btnCreate.isEnabled = true
-            Toast.makeText(this, R.string.register_success, Toast.LENGTH_LONG).show()
-            finish()
+            RegisterEvent.Registered -> {
+                toastLong(getString(R.string.register_success))
+                finish()
+            }
         }
     }
 
-    // ---------- Capa de carga ----------
-
-    private fun showLoading(message: String) {
-        tvLoading.text = message
+    private fun showLoading() {
+        if (layoutLoading.visibility == View.VISIBLE) return
         layoutLoading.visibility = View.VISIBLE
         layoutLoading.alpha = 0f
         layoutLoading.animate().alpha(1f).setDuration(200).start()
     }
 
     private fun hideLoading() {
+        if (layoutLoading.visibility != View.VISIBLE) return
         layoutLoading.animate()
             .alpha(0f)
             .setDuration(150)
@@ -122,18 +113,11 @@ class RegisterActivity : AppCompatActivity() {
             .start()
     }
 
-    // ---------- Utilidades ----------
-
-    /** Verifica la conexion a internet y avisa al usuario si no la hay. */
-    private fun isOnline(): Boolean {
-        if (NetworkChecker.isOnline(this)) {
-            return true
-        }
-        Toast.makeText(this, R.string.error_no_connection, Toast.LENGTH_LONG).show()
-        return false
+    private fun toastShort(messageRes: Int) {
+        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
     }
 
-    companion object {
-        private const val MIN_PASSWORD_LENGTH = 6
+    private fun toastLong(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 }
