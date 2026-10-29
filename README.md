@@ -5,7 +5,8 @@ materia DSM441. El proyecto implementa el módulo de autenticación de usuarios 
 Firebase Authentication e incluye inicio de sesión con correo electrónico y contraseña,
 registro de cuentas, recuperación de contraseña, acceso con proveedores externos
 (Google y GitHub), una pantalla de menú principal posterior al inicio de sesión, la
-gestión del perfil del usuario y la administración de citas con Cloud Firestore.
+gestión del perfil del usuario, la administración de citas con Cloud Firestore y una
+pantalla de contacto con accesos directos a las aplicaciones del dispositivo.
 
 ## Descripción general
 
@@ -37,9 +38,9 @@ implementación de datos sin modificar la interfaz de usuario.
   al inicio de sesión.
 - Saludo personalizado con el nombre del usuario autenticado.
 - Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
-  historial, contacto y ayuda). Las opciones Citas y Perfil abren sus pantallas; el
-  resto se muestra como próximamente disponible, conforme al alcance definido en el
-  enunciado.
+  historial, contacto y ayuda). Las opciones Citas, Perfil y Contacto abren sus
+  pantallas; el resto se muestra como próximamente disponible, conforme al alcance
+  definido en el enunciado.
 - Confirmación antes de salir de la aplicación.
 
 ### Perfil de usuario
@@ -62,6 +63,15 @@ implementación de datos sin modificar la interfaz de usuario.
 - Estados de la cita: pendiente, cancelada y completada.
 - Persistencia en Cloud Firestore, bajo `users/{uid}/appointments`, de modo que cada
   usuario solo accede a sus propios turnos.
+
+### Contacto
+
+- Datos del consultorio: teléfono, WhatsApp, correo electrónico, dirección y horario.
+- Botones que abren el marcador, WhatsApp con un mensaje predefinido, el cliente de
+  correo y la aplicación de mapas mediante Intents implícitos.
+- Aviso al usuario si el dispositivo no tiene una aplicación compatible, sin cerrar
+  la pantalla.
+- Los datos de contacto son de ejemplo y se editan en `res/values/strings.xml`.
 
 ## Tecnologías utilizadas
 
@@ -103,6 +113,7 @@ app/src/main/java/com/example/the_white_smile/
   MenuActivity.kt                # Vista del menú principal
   ProfileActivity.kt             # Vista del perfil de usuario
   AppointmentsActivity.kt        # Vista de las citas
+  ContactActivity.kt             # Vista de contacto
   core/
     ServiceLocator.kt            # Inyección de dependencias manual
     TaskExtensions.kt            # Adaptación de Task de Firebase a corrutinas
@@ -130,6 +141,7 @@ app/src/main/java/com/example/the_white_smile/
     FirebaseErrors.kt            # Traducción de errores de Firebase Auth
     FirestoreErrors.kt           # Traducción de errores de Cloud Firestore
     DateFormats.kt               # Formatos de fecha y hora
+    ContactLinks.kt              # Enlaces de teléfono, WhatsApp, correo y mapas
     NetworkChecker.kt            # Estado de la conexión
 
 app/src/test/java/com/example/the_white_smile/
@@ -143,6 +155,8 @@ app/src/test/java/com/example/the_white_smile/
     ProfileViewModelTest.kt      # Pruebas del ProfileViewModel
   ui/appointments/
     AppointmentsViewModelTest.kt # Pruebas del AppointmentsViewModel
+  util/
+    ContactLinksTest.kt          # Pruebas de los enlaces externos
 
 app/src/main/res/
   layout/
@@ -153,6 +167,7 @@ app/src/main/res/
     activity_appointments.xml    # Diseño de la lista de citas
     item_appointment.xml         # Elemento de la lista de citas
     dialog_new_appointment.xml   # Diálogo de nueva cita
+    activity_contact.xml         # Diseño de la pantalla de contacto
   values/                        # Cadenas de texto, arreglos, colores y temas
   drawable/                      # Iconos de la interfaz
 ```
@@ -216,8 +231,9 @@ el estado de carga y los casos de éxito y error. `ProfileViewModelTest` cubre l
 de la sesión, la edición del nombre, el envío de la verificación y el cambio de
 contraseña. `AppointmentsViewModelTest` comprueba la observación de las citas, las
 validaciones de servicio y fecha, el solapamiento de horarios, la creación, la
-cancelación y el manejo de errores. Las pruebas utilizan dobles de prueba, por lo que
-no requieren conexión, Firebase ni emulador.
+cancelación y el manejo de errores. `ContactLinksTest` verifica la construcción de
+los enlaces de teléfono, WhatsApp, correo y mapas. Las pruebas utilizan dobles de
+prueba, por lo que no requieren conexión, Firebase ni emulador.
 
 ### Prueba manual
 
@@ -232,7 +248,8 @@ no requieren conexión, Firebase ni emulador.
 8. Abrir la opción Citas, agendar un turno y comprobar que aparezca en la lista.
 9. Intentar agendar otra cita en el mismo horario y verificar el aviso de conflicto.
 10. Cancelar una cita pendiente y confirmar el cambio de estado.
-11. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+11. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
+12. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -243,6 +260,7 @@ no requieren conexión, Firebase ni emulador.
 - [x] Logotipo de la aplicación en la pantalla del menú.
 - [x] Módulo de inicio de sesión desarrollado en Kotlin con Android Studio.
 - [x] Gestión de citas con persistencia en Cloud Firestore.
+- [x] Pantalla de contacto con accesos directos a teléfono, WhatsApp, correo y mapas.
 
 ## Autor
 

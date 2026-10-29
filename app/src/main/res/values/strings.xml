@@ -105,6 +105,28 @@
     <string name="loading_saving_appointment">Agendando cita…</string>
     <string name="loading_cancel_appointment">Cancelando cita…</string>
 
+    <!-- Contacto -->
+    <string name="contact_title">Contacto</string>
+    <string name="contact_subtitle">Estamos para ayudarte</string>
+    <string name="contact_clinic_name">The White Smile</string>
+    <string name="contact_phone_label">Teléfono</string>
+    <string name="contact_phone_value">+503 1234-5678</string>
+    <string name="contact_whatsapp_label">WhatsApp</string>
+    <string name="contact_whatsapp_value">+503 1234-5678</string>
+    <string name="contact_email_label">Correo electrónico</string>
+    <string name="contact_email_value">contacto@thewhitesmile.com</string>
+    <string name="contact_address_label">Dirección</string>
+    <string name="contact_address_value">Calle Principal #123, San Salvador, El Salvador</string>
+    <string name="contact_schedule_label">Horario de atención</string>
+    <string name="contact_schedule_value">Lunes a viernes: 8:00 a 17:00\nSábados: 8:00 a 12:00</string>
+    <string name="contact_btn_call">Llamar</string>
+    <string name="contact_btn_whatsapp">Escribir</string>
+    <string name="contact_btn_email">Enviar correo</string>
+    <string name="contact_btn_map">Ver mapa</string>
+    <string name="contact_email_subject">Consulta desde The White Smile</string>
+    <string name="contact_whatsapp_message">Hola, quiero agendar una cita en The White Smile.</string>
+    <string name="contact_no_app">No hay una aplicación instalada para completar esta acción</string>
+
     <!-- Errores de Firestore (traducidos) -->
     <string name="error_firestore_permission">No tienes permisos para acceder a tus citas. Revisa las reglas de Firestore</string>
     <string name="error_firestore_not_found">La cita ya no existe</string>
