@@ -10,10 +10,36 @@
     android:paddingBottom="8dp">
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilAppointmentDentist"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/appointments_dentist_hint">
+
+        <AutoCompleteTextView
+            android:id="@+id/actAppointmentDentist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"
+            android:textSize="16sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/tvNoDentists"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/appointments_no_dentists"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorError"
+        android:visibility="gone" />
+
+    <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilAppointmentService"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         android:hint="@string/appointments_service_hint">
 
         <AutoCompleteTextView

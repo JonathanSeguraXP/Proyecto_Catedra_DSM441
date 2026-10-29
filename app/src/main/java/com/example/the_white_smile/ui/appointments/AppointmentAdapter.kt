@@ -33,6 +33,7 @@ class AppointmentAdapter(
 
         private val tvService: TextView = itemView.findViewById(R.id.tvAppointmentService)
         private val tvDateTime: TextView = itemView.findViewById(R.id.tvAppointmentDateTime)
+        private val tvDentist: TextView = itemView.findViewById(R.id.tvAppointmentDentist)
         private val tvStatus: TextView = itemView.findViewById(R.id.tvAppointmentStatus)
         private val btnCancel: MaterialButton = itemView.findViewById(R.id.btnCancelAppointment)
 
@@ -41,6 +42,10 @@ class AppointmentAdapter(
 
             tvService.text = appointment.service
             tvDateTime.text = DateFormats.dateTime(appointment.startAt)
+
+            val dentistName = appointment.dentistName?.trim().orEmpty()
+            tvDentist.visibility = if (dentistName.isEmpty()) View.GONE else View.VISIBLE
+            tvDentist.text = context.getString(R.string.appointments_dentist_label, dentistName)
 
             tvStatus.setText(
                 when (appointment.status) {

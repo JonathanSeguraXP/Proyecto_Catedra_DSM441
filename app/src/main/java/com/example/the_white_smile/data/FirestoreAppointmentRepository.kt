@@ -46,17 +46,23 @@ class FirestoreAppointmentRepository(
         awaitClose { registration.remove() }
     }
 
-    override suspend fun createAppointment(service: String, startAt: Long): Result<Unit> =
-        runData {
-            val data = mapOf(
-                FIELD_SERVICE to service,
-                FIELD_START_AT to startAt,
-                FIELD_STATUS to AppointmentStatus.PENDING.name,
-                FIELD_CREATED_AT to System.currentTimeMillis()
-            )
-            appointmentsRef(requireUid()).add(data).awaitResult()
-            Unit
-        }
+    override suspend fun createAppointment(
+        service: String,
+        startAt: Long,
+        dentistId: String,
+        dentistName: String
+    ): Result<Unit> = runData {
+        val data = mapOf(
+            FIELD_SERVICE to service,
+            FIELD_START_AT to startAt,
+            FIELD_STATUS to AppointmentStatus.PENDING.name,
+            FIELD_DENTIST_ID to dentistId,
+            FIELD_DENTIST_NAME to dentistName,
+            FIELD_CREATED_AT to System.currentTimeMillis()
+        )
+        appointmentsRef(requireUid()).add(data).awaitResult()
+        Unit
+    }
 
     override suspend fun cancelAppointment(id: String): Result<Unit> = runData {
         appointmentsRef(requireUid())
@@ -79,7 +85,9 @@ class FirestoreAppointmentRepository(
             id = id,
             service = service,
             startAt = startAt,
-            status = AppointmentStatus.from(getString(FIELD_STATUS))
+            status = AppointmentStatus.from(getString(FIELD_STATUS)),
+            dentistId = getString(FIELD_DENTIST_ID),
+            dentistName = getString(FIELD_DENTIST_NAME)
         )
     }
 
@@ -98,6 +106,8 @@ class FirestoreAppointmentRepository(
         const val FIELD_SERVICE = "service"
         const val FIELD_START_AT = "startAt"
         const val FIELD_STATUS = "status"
+        const val FIELD_DENTIST_ID = "dentistId"
+        const val FIELD_DENTIST_NAME = "dentistName"
         const val FIELD_CREATED_AT = "createdAt"
     }
 }

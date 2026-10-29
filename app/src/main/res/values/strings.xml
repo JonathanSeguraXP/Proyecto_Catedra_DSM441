@@ -87,6 +87,10 @@
     <string name="appointments_new">Agendar cita</string>
     <string name="appointments_dialog_title">Nueva cita</string>
     <string name="appointments_service_hint">Servicio</string>
+    <string name="appointments_dentist_hint">Dentista</string>
+    <string name="appointments_no_dentists">No hay dentistas disponibles. Pide al administrador que cree una cuenta.</string>
+    <string name="appointments_error_dentist">Selecciona un dentista</string>
+    <string name="appointments_dentist_label">Con %1$s</string>
     <string name="appointments_pick_date">Seleccionar fecha</string>
     <string name="appointments_pick_time">Seleccionar hora</string>
     <string name="appointments_dialog_confirm">Agendar</string>

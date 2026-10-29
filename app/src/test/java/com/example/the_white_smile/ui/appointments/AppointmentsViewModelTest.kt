@@ -4,9 +4,11 @@ import com.example.the_white_smile.R
 import com.example.the_white_smile.core.MainDispatcherRule
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AppointmentStatus
+import com.example.the_white_smile.domain.Dentist
 import com.example.the_white_smile.testing.FakeAppointmentRepository
 import com.example.the_white_smile.testing.FakeAuthRepository
 import com.example.the_white_smile.testing.FakeConnectivityChecker
+import com.example.the_white_smile.testing.FakeDentistRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -31,14 +33,28 @@ class AppointmentsViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repository = FakeAppointmentRepository()
+    private val dentistRepository = FakeDentistRepository().apply {
+        dentists.value = listOf(
+            Dentist(
+                id = "d1",
+                displayName = "Dra. Ana Ramirez",
+                email = "ana@correo.com",
+                specialty = "Ortodoncia"
+            )
+        )
+    }
     private val authRepository = FakeAuthRepository().apply { loggedIn = true }
     private val connectivity = FakeConnectivityChecker()
 
     /** Momento futuro usado como fecha valida en las pruebas. */
     private val futureStartAt = System.currentTimeMillis() + 3_600_000L
 
+    /** Dentista activo cargado por defecto en el estado. */
+    private val dentistId = "d1"
+
     private fun createViewModel() = AppointmentsViewModel(
         repository = repository,
+        dentistRepository = dentistRepository,
         authRepository = authRepository,
         connectivity = connectivity
     )
@@ -77,9 +93,10 @@ class AppointmentsViewModelTest {
     @Test
     fun `un servicio vacio avisa y no llama al repositorio`() = runTest {
         val viewModel = createViewModel()
+        advanceUntilIdle()
         val events = collectEvents(viewModel)
 
-        viewModel.createAppointment("   ", futureStartAt)
+        viewModel.createAppointment("   ", futureStartAt, dentistId)
         advanceUntilIdle()
 
         assertEquals(
@@ -92,9 +109,14 @@ class AppointmentsViewModelTest {
     @Test
     fun `una fecha pasada avisa y no llama al repositorio`() = runTest {
         val viewModel = createViewModel()
+        advanceUntilIdle()
         val events = collectEvents(viewModel)
 
-        viewModel.createAppointment("Limpieza dental", System.currentTimeMillis() - 1_000L)
+        viewModel.createAppointment(
+            "Limpieza dental",
+            System.currentTimeMillis() - 1_000L,
+            dentistId
+        )
         advanceUntilIdle()
 
         assertEquals(
@@ -113,7 +135,7 @@ class AppointmentsViewModelTest {
         advanceUntilIdle()
         val events = collectEvents(viewModel)
 
-        viewModel.createAppointment("Limpieza dental", futureStartAt)
+        viewModel.createAppointment("Limpieza dental", futureStartAt, dentistId)
         advanceUntilIdle()
 
         assertEquals(
@@ -132,13 +154,15 @@ class AppointmentsViewModelTest {
         advanceUntilIdle()
         val events = collectEvents(viewModel)
 
-        viewModel.createAppointment("Limpieza dental", futureStartAt)
+        viewModel.createAppointment("Limpieza dental", futureStartAt, dentistId)
         advanceUntilIdle()
 
         assertEquals(listOf(AppointmentsEvent.Message(R.string.appointment_created)), events)
         assertEquals(1, repository.createCalls)
         assertEquals("Limpieza dental", repository.lastService)
         assertEquals(futureStartAt, repository.lastStartAt)
+        assertEquals(dentistId, repository.lastDentistId)
+        assertEquals("Dra. Ana Ramirez", repository.lastDentistName)
         assertFalse(viewModel.uiState.value.isLoading)
     }
 
@@ -146,9 +170,10 @@ class AppointmentsViewModelTest {
     fun `sin conexion avisa y no llama al repositorio`() = runTest {
         connectivity.online = false
         val viewModel = createViewModel()
+        advanceUntilIdle()
         val events = collectEvents(viewModel)
 
-        viewModel.createAppointment("Limpieza dental", futureStartAt)
+        viewModel.createAppointment("Limpieza dental", futureStartAt, dentistId)
         advanceUntilIdle()
 
         assertEquals(
@@ -162,9 +187,10 @@ class AppointmentsViewModelTest {
     fun `un error al guardar se emite como evento de error`() = runTest {
         repository.createResult = Result.failure(IllegalStateException("fallo"))
         val viewModel = createViewModel()
+        advanceUntilIdle()
         val events = collectEvents(viewModel)
 
-        viewModel.createAppointment("Limpieza dental", futureStartAt)
+        viewModel.createAppointment("Limpieza dental", futureStartAt, dentistId)
         advanceUntilIdle()
 
         assertEquals(1, events.size)
@@ -209,6 +235,65 @@ class AppointmentsViewModelTest {
     @Test
     fun `un error al observar las citas se emite como evento`() = runTest {
         repository.observeError = IllegalStateException("sin permisos")
+        val viewModel = createViewModel()
+        val events = collectEvents(viewModel)
+
+        advanceUntilIdle()
+
+        assertEquals(1, events.size)
+        assertTrue(events.first() is AppointmentsEvent.Error)
+    }
+
+    @Test
+    fun `solo se ofrecen los dentistas activos`() = runTest {
+        dentistRepository.dentists.value = dentistRepository.dentists.value + Dentist(
+            id = "d2",
+            displayName = "Dr. Inactivo",
+            email = "inactivo@correo.com",
+            specialty = "General",
+            active = false
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(listOf("d1"), viewModel.uiState.value.dentists.map { it.id })
+    }
+
+    @Test
+    fun `sin dentista seleccionado avisa y no guarda la cita`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        val events = collectEvents(viewModel)
+
+        viewModel.createAppointment("Limpieza dental", futureStartAt, "")
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(AppointmentsEvent.Message(R.string.appointments_error_dentist)),
+            events
+        )
+        assertEquals(0, repository.createCalls)
+    }
+
+    @Test
+    fun `un dentista inexistente o inactivo avisa y no guarda la cita`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        val events = collectEvents(viewModel)
+
+        viewModel.createAppointment("Limpieza dental", futureStartAt, "no-existe")
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(AppointmentsEvent.Message(R.string.appointments_error_dentist)),
+            events
+        )
+        assertEquals(0, repository.createCalls)
+    }
+
+    @Test
+    fun `si falla la lista de dentistas se emite el error`() = runTest {
+        dentistRepository.observeError = IllegalStateException("sin permisos")
         val viewModel = createViewModel()
         val events = collectEvents(viewModel)
 

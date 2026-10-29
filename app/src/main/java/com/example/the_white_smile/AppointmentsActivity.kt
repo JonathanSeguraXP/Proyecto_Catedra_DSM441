@@ -121,9 +121,28 @@ class AppointmentsActivity : AppCompatActivity() {
     private fun showNewAppointmentDialog() {
         val content = layoutInflater.inflate(R.layout.dialog_new_appointment, null)
 
+        val actDentist = content.findViewById<AutoCompleteTextView>(R.id.actAppointmentDentist)
+        val tvNoDentists = content.findViewById<TextView>(R.id.tvNoDentists)
         val actService = content.findViewById<AutoCompleteTextView>(R.id.actAppointmentService)
         val btnPickDate = content.findViewById<MaterialButton>(R.id.btnPickDate)
         val btnPickTime = content.findViewById<MaterialButton>(R.id.btnPickTime)
+
+        // Solo se ofrecen dentistas activos, cargados por el ViewModel.
+        val dentists = viewModel.uiState.value.dentists
+        var selectedDentistId: String? = null
+
+        actDentist.setAdapter(
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_list_item_1,
+                dentists.map { it.displayName }
+            )
+        )
+        actDentist.setOnItemClickListener { _, _, position, _ ->
+            selectedDentistId = dentists[position].id
+        }
+        actDentist.setOnClickListener { actDentist.showDropDown() }
+        tvNoDentists.visibility = if (dentists.isEmpty()) View.VISIBLE else View.GONE
 
         actService.setAdapter(
             ArrayAdapter(
@@ -191,10 +210,20 @@ class AppointmentsActivity : AppCompatActivity() {
                 val service = actService.text?.toString().orEmpty()
                 val date = selectedDate
                 val time = selectedTime
+                // Si el usuario escribio el nombre sin tocar la lista, se busca igual.
+                val typedDentist = actDentist.text?.toString()?.trim().orEmpty()
+                val dentistId = selectedDentistId
+                    ?: dentists.firstOrNull { it.displayName == typedDentist }?.id
 
                 when {
                     date == null || time == null -> {
                         toastShort(R.string.appointments_error_datetime)
+                    }
+                    dentistId == null -> {
+                        toastShort(
+                            if (dentists.isEmpty()) R.string.appointments_no_dentists
+                            else R.string.appointments_error_dentist
+                        )
                     }
                     service.isBlank() -> {
                         toastShort(R.string.appointments_error_service)
@@ -203,7 +232,8 @@ class AppointmentsActivity : AppCompatActivity() {
                         dialog.dismiss()
                         viewModel.createAppointment(
                             service = service,
-                            startAt = startAtMillis(date, time)
+                            startAt = startAtMillis(date, time),
+                            dentistId = dentistId
                         )
                     }
                 }

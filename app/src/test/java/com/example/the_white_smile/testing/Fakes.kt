@@ -137,6 +137,8 @@ class FakeAppointmentRepository : AppointmentRepository {
     var createCalls = 0
     var lastService: String? = null
     var lastStartAt: Long? = null
+    var lastDentistId: String? = null
+    var lastDentistName: String? = null
     var createResult: Result<Unit> = Result.success(Unit)
 
     var cancelCalls = 0
@@ -148,10 +150,17 @@ class FakeAppointmentRepository : AppointmentRepository {
         return if (error != null) flow { throw error } else appointments.asStateFlow()
     }
 
-    override suspend fun createAppointment(service: String, startAt: Long): Result<Unit> {
+    override suspend fun createAppointment(
+        service: String,
+        startAt: Long,
+        dentistId: String,
+        dentistName: String
+    ): Result<Unit> {
         createCalls++
         lastService = service
         lastStartAt = startAt
+        lastDentistId = dentistId
+        lastDentistName = dentistName
         return createResult
     }
 

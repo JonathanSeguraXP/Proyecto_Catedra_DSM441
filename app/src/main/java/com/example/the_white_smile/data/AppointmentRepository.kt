@@ -13,7 +13,12 @@ interface AppointmentRepository {
     /** Emite la lista de citas del usuario cada vez que cambia en el servidor. */
     fun observeAppointments(): Flow<List<Appointment>>
 
-    suspend fun createAppointment(service: String, startAt: Long): Result<Unit>
+    suspend fun createAppointment(
+        service: String,
+        startAt: Long,
+        dentistId: String,
+        dentistName: String
+    ): Result<Unit>
 
     suspend fun cancelAppointment(id: String): Result<Unit>
 }

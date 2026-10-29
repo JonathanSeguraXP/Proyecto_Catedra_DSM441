@@ -12,6 +12,7 @@ import com.example.the_white_smile.core.ServiceLocator
 import com.example.the_white_smile.data.AndroidConnectivityChecker
 import com.example.the_white_smile.data.AppointmentRepository
 import com.example.the_white_smile.data.AuthRepository
+import com.example.the_white_smile.data.DentistRepository
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AppointmentStatus
 import com.example.the_white_smile.domain.ConnectivityChecker
@@ -31,6 +32,7 @@ import kotlinx.coroutines.launch
  */
 class AppointmentsViewModel(
     private val repository: AppointmentRepository,
+    private val dentistRepository: DentistRepository,
     private val authRepository: AuthRepository,
     private val connectivity: ConnectivityChecker
 ) : ViewModel() {
@@ -43,15 +45,18 @@ class AppointmentsViewModel(
 
     init {
         observeAppointments()
+        observeDentists()
     }
 
     /** La pantalla solo debe mostrarse con una sesion activa. */
     fun hasActiveSession(): Boolean = authRepository.isLoggedIn()
 
-    fun createAppointment(service: String, startAt: Long) {
+    fun createAppointment(service: String, startAt: Long, dentistId: String) {
         if (_uiState.value.isLoading) return
 
         val cleanService = service.trim()
+        val dentist = _uiState.value.dentists.firstOrNull { it.id == dentistId }
+
         when {
             cleanService.isEmpty() -> {
                 notify(R.string.appointments_error_service)
@@ -59,6 +64,10 @@ class AppointmentsViewModel(
             }
             startAt <= System.currentTimeMillis() -> {
                 notify(R.string.appointments_error_past)
+                return
+            }
+            dentist == null -> {
+                notify(R.string.appointments_error_dentist)
                 return
             }
             hasConflict(startAt) -> {
@@ -69,7 +78,12 @@ class AppointmentsViewModel(
         }
 
         runOperation(R.string.loading_saving_appointment) {
-            repository.createAppointment(cleanService, startAt)
+            repository.createAppointment(
+                service = cleanService,
+                startAt = startAt,
+                dentistId = dentist.id,
+                dentistName = dentist.displayName
+            )
                 .onSuccess { notify(R.string.appointment_created) }
                 .onFailure { _events.emit(AppointmentsEvent.Error(it)) }
         }
@@ -93,6 +107,19 @@ class AppointmentsViewModel(
                 .catch { _events.emit(AppointmentsEvent.Error(it)) }
                 .collect { appointments ->
                     _uiState.update { it.copy(appointments = appointments) }
+                }
+        }
+    }
+
+    /** Solo se ofrecen los dentistas activos al agendar. */
+    private fun observeDentists() {
+        viewModelScope.launch {
+            dentistRepository.observeDentists()
+                .catch { _events.emit(AppointmentsEvent.Error(it)) }
+                .collect { dentists ->
+                    _uiState.update { state ->
+                        state.copy(dentists = dentists.filter { it.active })
+                    }
                 }
         }
     }
@@ -131,6 +158,7 @@ class AppointmentsViewModel(
             initializer {
                 AppointmentsViewModel(
                     repository = ServiceLocator.appointmentRepository,
+                    dentistRepository = ServiceLocator.dentistRepository(context),
                     authRepository = ServiceLocator.authRepository,
                     connectivity = AndroidConnectivityChecker(context.applicationContext)
                 )

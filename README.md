@@ -72,7 +72,7 @@ implementación de datos sin modificar la interfaz de usuario.
 - El perfil se guarda en `dentists/{uid}` y el rol `DENTIST` en `users/{uid}`. Si el
   guardado del perfil falla, se elimina la cuenta recién creada para no dejarla a medias.
 - Interruptor para activar o desactivar un dentista sin eliminar su cuenta. Los
-  dentistas inactivos no se ofrecerán al agendar citas en la siguiente etapa.
+  dentistas inactivos no aparecen en el selector al agendar citas.
 - Nota: desactivar un dentista no bloquea su inicio de sesión, porque deshabilitar una
   cuenta de Authentication requiere el SDK de administrador o Cloud Functions.
 
@@ -88,9 +88,12 @@ implementación de datos sin modificar la interfaz de usuario.
 ### Citas
 
 - Listado en tiempo real de las citas del usuario autenticado.
-- Registro de una nueva cita con servicio, fecha y hora, mediante selectores nativos.
-- Validaciones de servicio vacío, fecha anterior al momento actual y solapamiento con
-  otra cita pendiente del mismo usuario.
+- Registro de una nueva cita con dentista, servicio, fecha y hora, mediante selectores
+  nativos. Solo se ofrecen los dentistas activos.
+- Validaciones de dentista no seleccionado, servicio vacío, fecha anterior al momento
+  actual y solapamiento con otra cita pendiente del mismo usuario.
+- La cita guarda el identificador y el nombre del dentista, de modo que se muestran
+  aunque el dentista cambie de nombre o se desactive.
 - Cancelación de citas pendientes con confirmación previa; el registro se conserva con
   estado `CANCELLED` en lugar de eliminarse.
 - Estados de la cita: pendiente, cancelada y completada.
@@ -101,6 +104,7 @@ implementación de datos sin modificar la interfaz de usuario.
 
 - Listado de las citas pasadas y canceladas, ordenadas de la más reciente a la más
   antigua.
+- Cada cita muestra el dentista con el que se agendó.
 - Las citas pendientes cuya fecha aún no llega no se muestran en el historial, para
   que sigan disponibles en la pantalla de Citas.
 - Reutiliza el repositorio de citas y el adaptador de la pantalla de Citas; desde el
@@ -360,9 +364,10 @@ la aplicación con el botón Run.
 `LoginViewModelTest` verifica las validaciones de los campos, la falta de conexión,
 el estado de carga y los casos de éxito y error. `ProfileViewModelTest` cubre la carga
 de la sesión, la edición del nombre, el envío de la verificación y el cambio de
-contraseña. `AppointmentsViewModelTest` comprueba la observación de las citas, las
-validaciones de servicio y fecha, el solapamiento de horarios, la creación, la
-cancelación y el manejo de errores. `HistoryViewModelTest` comprueba el filtrado de
+contraseña. `AppointmentsViewModelTest` comprueba la observación de las citas y de los dentistas
+activos, las validaciones de dentista, servicio y fecha, el solapamiento de horarios,
+la creación con el dentista elegido, la cancelación y el manejo de errores.
+`HistoryViewModelTest` comprueba el filtrado de
 las citas pasadas y canceladas, el orden descendente, el estado vacío y el manejo de
 errores. `TreatmentsViewModelTest` comprueba el catálogo, la búsqueda por
 identificador y la integridad de los datos locales. `HelpViewModelTest` verifica el
@@ -385,23 +390,26 @@ conexión, Firebase ni emulador.
 5. Probar el inicio de sesión con Google y con GitHub.
 6. Abrir la opción Perfil, editar el nombre y verificar que el saludo del menú se actualice.
 7. Probar el reenvío del correo de verificación y el cambio de contraseña.
-8. Abrir la opción Citas, agendar un turno y comprobar que aparezca en la lista.
+8. Abrir la opción Citas, agendar un turno eligiendo dentista, servicio, fecha y hora,
+   y comprobar que aparezca en la lista con el dentista elegido.
 9. Intentar agendar otra cita en el mismo horario y verificar el aviso de conflicto.
-10. Cancelar una cita pendiente y confirmar el cambio de estado.
-11. Abrir la opción Historial y comprobar que aparezca la cita cancelada, además de
+10. Desactivar un dentista desde la cuenta del administrador y comprobar que ya no
+    aparece en el selector de nueva cita.
+11. Cancelar una cita pendiente y confirmar el cambio de estado.
+12. Abrir la opción Historial y comprobar que aparezca la cita cancelada, además de
     las citas cuya fecha ya pasó.
-12. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
-13. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
-14. Abrir la opción Ayuda, desplegar una pregunta y comprobar que se cierre al abrir
+13. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
+14. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
+15. Abrir la opción Ayuda, desplegar una pregunta y comprobar que se cierre al abrir
     otra; probar el botón Ir a Contacto.
-15. Iniciar sesión con la cuenta de administrador y verificar que el menú muestre
+16. Iniciar sesión con la cuenta de administrador y verificar que el menú muestre
     “Panel de administración”; con una cuenta sin perfil debe mostrarse como paciente.
-16. Abrir la opción Dentistas, crear una cuenta con nombre, especialidad, correo y
+17. Abrir la opción Dentistas, crear una cuenta con nombre, especialidad, correo y
     contraseña, y comprobar que aparezca en la lista sin cerrar la sesión del admin.
-17. Cerrar sesión e iniciar sesión con la cuenta del dentista recién creada; debe
+18. Cerrar sesión e iniciar sesión con la cuenta del dentista recién creada; debe
     entrar al menú del dentista.
-18. Volver a la cuenta de administrador y desactivar al dentista desde el interruptor.
-19. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+19. Volver a la cuenta de administrador y desactivar al dentista desde el interruptor.
+20. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -418,6 +426,7 @@ conexión, Firebase ni emulador.
 - [x] Pantalla de ayuda con preguntas frecuentes desplegables.
 - [x] Roles de paciente, dentista y administrador con menú adaptado.
 - [x] Creación de cuentas de dentistas desde la app por parte del administrador.
+- [x] Selección de dentista al agendar una cita.
 
 ## Autor
 
