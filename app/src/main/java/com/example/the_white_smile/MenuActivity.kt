@@ -196,7 +196,11 @@ class MenuActivity : AppCompatActivity() {
                 android.R.drawable.ic_dialog_email,
                 ContactActivity::class.java
             ),
-            MenuOption(R.string.menu_option_help, android.R.drawable.ic_menu_help)
+            MenuOption(
+                R.string.menu_option_help,
+                android.R.drawable.ic_menu_help,
+                HelpActivity::class.java
+            )
         )
     }
 }

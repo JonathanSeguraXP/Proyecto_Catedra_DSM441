@@ -112,6 +112,28 @@
     <string name="history_empty_message">Aquí verás tus citas pasadas y las que hayas cancelado.</string>
     <string name="loading_history">Cargando historial…</string>
 
+    <!-- Ayuda -->
+    <string name="help_title">Ayuda</string>
+    <string name="help_subtitle">Preguntas frecuentes</string>
+    <string name="help_faq_book_question">¿Cómo agendo una cita?</string>
+    <string name="help_faq_book_answer">Entra a Citas y toca el botón +. Elige el servicio, la fecha y la hora, y confirma con Agendar. La cita aparecerá de inmediato en tu lista.</string>
+    <string name="help_faq_cancel_question">¿Puedo cancelar o reprogramar una cita?</string>
+    <string name="help_faq_cancel_answer">En Citas, toca Cancelar en la cita pendiente y confirma. Para reprogramar, cancela esa cita y agenda una nueva; el cambio de horario no se hace automáticamente.</string>
+    <string name="help_faq_history_question">¿Dónde veo mis citas anteriores?</string>
+    <string name="help_faq_history_answer">En el menú principal abre Historial. Allí aparecen las citas cuya fecha ya pasó y las canceladas, de la más reciente a la más antigua.</string>
+    <string name="help_faq_password_question">¿Cómo cambio mi contraseña?</string>
+    <string name="help_faq_password_answer">Ve a Perfil y toca Cambiar contraseña. Te enviaremos un correo con un enlace para restablecerla; revisa también la carpeta de spam.</string>
+    <string name="help_faq_verification_question">¿Cómo verifico mi correo electrónico?</string>
+    <string name="help_faq_verification_answer">En Perfil, toca Verificar correo para recibir un nuevo enlace. Abre el mensaje desde el mismo dispositivo y sigue las instrucciones.</string>
+    <string name="help_faq_profile_question">¿Cómo actualizo mis datos personales?</string>
+    <string name="help_faq_profile_answer">En Perfil puedes editar tu nombre y guardar los cambios. Para modificar tu correo electrónico, comunícate con el consultorio desde la pantalla Contacto.</string>
+    <string name="help_faq_treatments_question">¿Dónde encuentro información sobre los tratamientos?</string>
+    <string name="help_faq_treatments_answer">Abre Tratamientos en el menú principal y toca un servicio para ver su descripción, duración aproximada y recomendaciones.</string>
+    <string name="help_faq_contact_question">¿Cómo contacto al consultorio?</string>
+    <string name="help_faq_contact_answer">En Contacto encontrarás botones para llamar, escribir por WhatsApp, enviar un correo o abrir la ubicación en el mapa.</string>
+    <string name="help_contact_hint">¿No encontraste tu respuesta?</string>
+    <string name="help_contact_action">Ir a Contacto</string>
+
     <!-- Contacto -->
     <string name="contact_title">Contacto</string>
     <string name="contact_subtitle">Estamos para ayudarte</string>

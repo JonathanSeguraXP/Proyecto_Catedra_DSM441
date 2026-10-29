@@ -6,8 +6,9 @@ Firebase Authentication e incluye inicio de sesión con correo electrónico y co
 registro de cuentas, recuperación de contraseña, acceso con proveedores externos
 (Google y GitHub), una pantalla de menú principal posterior al inicio de sesión, la
 gestión del perfil del usuario, la administración de citas con Cloud Firestore, el
-historial de citas pasadas y canceladas, un catálogo de tratamientos con su detalle y
-una pantalla de contacto con accesos directos a las aplicaciones del dispositivo.
+historial de citas pasadas y canceladas, un catálogo de tratamientos con su detalle,
+una pantalla de contacto con accesos directos a las aplicaciones del dispositivo y
+una sección de ayuda con preguntas frecuentes.
 
 ## Descripción general
 
@@ -39,9 +40,7 @@ implementación de datos sin modificar la interfaz de usuario.
   al inicio de sesión.
 - Saludo personalizado con el nombre del usuario autenticado.
 - Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
-  historial, contacto y ayuda). Las opciones Citas, Historial, Perfil, Contacto y
-  Tratamientos abren sus pantallas; el resto se muestra como próximamente disponible,
-  conforme al alcance definido en el enunciado.
+  historial, contacto y ayuda). Todas las opciones abren su pantalla correspondiente.
 - Confirmación antes de salir de la aplicación.
 
 ### Perfil de usuario
@@ -92,6 +91,16 @@ implementación de datos sin modificar la interfaz de usuario.
 - Catálogo local de ejemplo a través del contrato `TreatmentRepository`, de modo que
   puede reemplazarse por otra fuente de datos sin cambiar las pantallas.
 
+### Ayuda
+
+- Preguntas frecuentes desplegables sobre citas, historial, contraseña, verificación
+  del correo, perfil, tratamientos y contacto.
+- Solo se muestra una respuesta abierta a la vez; al tocar de nuevo la pregunta se
+  cierra.
+- Botón directo a la pantalla de Contacto para resolver dudas adicionales.
+- Catálogo local en `FaqCatalog`, de modo que se pueden agregar preguntas sin cambiar
+  la lógica de la pantalla.
+
 ## Tecnologías utilizadas
 
 | Tecnología | Uso |
@@ -136,6 +145,7 @@ app/src/main/java/com/example/the_white_smile/
   ContactActivity.kt             # Vista de contacto
   TreatmentsActivity.kt          # Vista del catálogo de tratamientos
   TreatmentDetailActivity.kt     # Vista del detalle de un tratamiento
+  HelpActivity.kt                # Vista de ayuda con preguntas frecuentes
   core/
     ServiceLocator.kt            # Inyección de dependencias manual
     TaskExtensions.kt            # Adaptación de Task de Firebase a corrutinas
@@ -164,6 +174,7 @@ app/src/main/java/com/example/the_white_smile/
     appointments/                # AppointmentsViewModel, adaptador y eventos
     history/                     # HistoryViewModel, estado y eventos
     treatments/                  # TreatmentsViewModel, detalle y adaptador
+    help/                        # HelpViewModel, catálogo y adaptador
   util/
     FirebaseErrors.kt            # Traducción de errores de Firebase Auth
     FirestoreErrors.kt           # Traducción de errores de Cloud Firestore
@@ -186,6 +197,8 @@ app/src/test/java/com/example/the_white_smile/
     HistoryViewModelTest.kt      # Pruebas del historial de citas
   ui/treatments/
     TreatmentsViewModelTest.kt   # Pruebas del catálogo y del detalle
+  ui/help/
+    HelpViewModelTest.kt         # Pruebas de las preguntas desplegables
   util/
     ContactLinksTest.kt          # Pruebas de los enlaces externos
 
@@ -203,6 +216,8 @@ app/src/main/res/
     activity_treatments.xml      # Diseño del catálogo de tratamientos
     item_treatment.xml           # Elemento del catálogo
     activity_treatment_detail.xml # Diseño del detalle del tratamiento
+    activity_help.xml            # Diseño de la pantalla de ayuda
+    item_faq.xml                 # Pregunta desplegable
   values/                        # Cadenas de texto, arreglos, colores y temas
   drawable/                      # Iconos de la interfaz
 ```
@@ -269,9 +284,11 @@ validaciones de servicio y fecha, el solapamiento de horarios, la creación, la
 cancelación y el manejo de errores. `HistoryViewModelTest` comprueba el filtrado de
 las citas pasadas y canceladas, el orden descendente, el estado vacío y el manejo de
 errores. `TreatmentsViewModelTest` comprueba el catálogo, la búsqueda por
-identificador y la integridad de los datos locales. `ContactLinksTest` verifica la
-construcción de los enlaces de teléfono, WhatsApp, correo y mapas. Las pruebas
-utilizan dobles de prueba, por lo que no requieren conexión, Firebase ni emulador.
+identificador y la integridad de los datos locales. `HelpViewModelTest` verifica el
+catálogo de preguntas y el despliegue de una sola respuesta a la vez.
+`ContactLinksTest` verifica la construcción de los enlaces de teléfono, WhatsApp,
+correo y mapas. Las pruebas utilizan dobles de prueba, por lo que no requieren
+conexión, Firebase ni emulador.
 
 ### Prueba manual
 
@@ -290,7 +307,9 @@ utilizan dobles de prueba, por lo que no requieren conexión, Firebase ni emulad
     las citas cuya fecha ya pasó.
 12. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
 13. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
-14. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+14. Abrir la opción Ayuda, desplegar una pregunta y comprobar que se cierre al abrir
+    otra; probar el botón Ir a Contacto.
+15. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -304,6 +323,7 @@ utilizan dobles de prueba, por lo que no requieren conexión, Firebase ni emulad
 - [x] Historial de citas pasadas y canceladas.
 - [x] Pantalla de contacto con accesos directos a teléfono, WhatsApp, correo y mapas.
 - [x] Catálogo de tratamientos con pantalla de detalle.
+- [x] Pantalla de ayuda con preguntas frecuentes desplegables.
 
 ## Autor
 
