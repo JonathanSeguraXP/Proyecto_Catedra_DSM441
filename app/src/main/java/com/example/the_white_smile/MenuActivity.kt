@@ -186,7 +186,11 @@ class MenuActivity : AppCompatActivity() {
                 android.R.drawable.ic_menu_myplaces,
                 ProfileActivity::class.java
             ),
-            MenuOption(R.string.menu_option_history, android.R.drawable.ic_menu_recent_history),
+            MenuOption(
+                R.string.menu_option_history,
+                android.R.drawable.ic_menu_recent_history,
+                HistoryActivity::class.java
+            ),
             MenuOption(
                 R.string.menu_option_contact,
                 android.R.drawable.ic_dialog_email,

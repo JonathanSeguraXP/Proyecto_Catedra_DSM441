@@ -5,9 +5,9 @@ materia DSM441. El proyecto implementa el módulo de autenticación de usuarios 
 Firebase Authentication e incluye inicio de sesión con correo electrónico y contraseña,
 registro de cuentas, recuperación de contraseña, acceso con proveedores externos
 (Google y GitHub), una pantalla de menú principal posterior al inicio de sesión, la
-gestión del perfil del usuario, la administración de citas con Cloud Firestore, un
-catálogo de tratamientos con su detalle y una pantalla de contacto con accesos
-directos a las aplicaciones del dispositivo.
+gestión del perfil del usuario, la administración de citas con Cloud Firestore, el
+historial de citas pasadas y canceladas, un catálogo de tratamientos con su detalle y
+una pantalla de contacto con accesos directos a las aplicaciones del dispositivo.
 
 ## Descripción general
 
@@ -39,9 +39,9 @@ implementación de datos sin modificar la interfaz de usuario.
   al inicio de sesión.
 - Saludo personalizado con el nombre del usuario autenticado.
 - Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
-  historial, contacto y ayuda). Las opciones Citas, Perfil, Contacto y Tratamientos
-  abren sus pantallas; el resto se muestra como próximamente disponible, conforme al
-  alcance definido en el enunciado.
+  historial, contacto y ayuda). Las opciones Citas, Historial, Perfil, Contacto y
+  Tratamientos abren sus pantallas; el resto se muestra como próximamente disponible,
+  conforme al alcance definido en el enunciado.
 - Confirmación antes de salir de la aplicación.
 
 ### Perfil de usuario
@@ -64,6 +64,16 @@ implementación de datos sin modificar la interfaz de usuario.
 - Estados de la cita: pendiente, cancelada y completada.
 - Persistencia en Cloud Firestore, bajo `users/{uid}/appointments`, de modo que cada
   usuario solo accede a sus propios turnos.
+
+### Historial
+
+- Listado de las citas pasadas y canceladas, ordenadas de la más reciente a la más
+  antigua.
+- Las citas pendientes cuya fecha aún no llega no se muestran en el historial, para
+  que sigan disponibles en la pantalla de Citas.
+- Reutiliza el repositorio de citas y el adaptador de la pantalla de Citas; desde el
+  historial no se puede cancelar.
+- Estado vacío, indicador de carga y traducción de los errores de Cloud Firestore.
 
 ### Contacto
 
@@ -122,6 +132,7 @@ app/src/main/java/com/example/the_white_smile/
   MenuActivity.kt                # Vista del menú principal
   ProfileActivity.kt             # Vista del perfil de usuario
   AppointmentsActivity.kt        # Vista de las citas
+  HistoryActivity.kt             # Vista del historial de citas
   ContactActivity.kt             # Vista de contacto
   TreatmentsActivity.kt          # Vista del catálogo de tratamientos
   TreatmentDetailActivity.kt     # Vista del detalle de un tratamiento
@@ -151,6 +162,7 @@ app/src/main/java/com/example/the_white_smile/
     menu/                        # MenuViewModel, estado y eventos
     profile/                     # ProfileViewModel, estado y eventos
     appointments/                # AppointmentsViewModel, adaptador y eventos
+    history/                     # HistoryViewModel, estado y eventos
     treatments/                  # TreatmentsViewModel, detalle y adaptador
   util/
     FirebaseErrors.kt            # Traducción de errores de Firebase Auth
@@ -170,6 +182,8 @@ app/src/test/java/com/example/the_white_smile/
     ProfileViewModelTest.kt      # Pruebas del ProfileViewModel
   ui/appointments/
     AppointmentsViewModelTest.kt # Pruebas del AppointmentsViewModel
+  ui/history/
+    HistoryViewModelTest.kt      # Pruebas del historial de citas
   ui/treatments/
     TreatmentsViewModelTest.kt   # Pruebas del catálogo y del detalle
   util/
@@ -183,6 +197,7 @@ app/src/main/res/
     activity_profile.xml         # Diseño del perfil
     activity_appointments.xml    # Diseño de la lista de citas
     item_appointment.xml         # Elemento de la lista de citas
+    activity_history.xml         # Diseño del historial de citas
     dialog_new_appointment.xml   # Diálogo de nueva cita
     activity_contact.xml         # Diseño de la pantalla de contacto
     activity_treatments.xml      # Diseño del catálogo de tratamientos
@@ -251,11 +266,12 @@ el estado de carga y los casos de éxito y error. `ProfileViewModelTest` cubre l
 de la sesión, la edición del nombre, el envío de la verificación y el cambio de
 contraseña. `AppointmentsViewModelTest` comprueba la observación de las citas, las
 validaciones de servicio y fecha, el solapamiento de horarios, la creación, la
-cancelación y el manejo de errores. `TreatmentsViewModelTest` comprueba el catálogo,
-la búsqueda por identificador y la integridad de los datos locales. `ContactLinksTest`
-verifica la construcción de los enlaces de teléfono, WhatsApp, correo y mapas. Las
-pruebas utilizan dobles de prueba, por lo que no requieren conexión, Firebase ni
-emulador.
+cancelación y el manejo de errores. `HistoryViewModelTest` comprueba el filtrado de
+las citas pasadas y canceladas, el orden descendente, el estado vacío y el manejo de
+errores. `TreatmentsViewModelTest` comprueba el catálogo, la búsqueda por
+identificador y la integridad de los datos locales. `ContactLinksTest` verifica la
+construcción de los enlaces de teléfono, WhatsApp, correo y mapas. Las pruebas
+utilizan dobles de prueba, por lo que no requieren conexión, Firebase ni emulador.
 
 ### Prueba manual
 
@@ -270,9 +286,11 @@ emulador.
 8. Abrir la opción Citas, agendar un turno y comprobar que aparezca en la lista.
 9. Intentar agendar otra cita en el mismo horario y verificar el aviso de conflicto.
 10. Cancelar una cita pendiente y confirmar el cambio de estado.
-11. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
-12. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
-13. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+11. Abrir la opción Historial y comprobar que aparezca la cita cancelada, además de
+    las citas cuya fecha ya pasó.
+12. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
+13. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
+14. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -283,6 +301,7 @@ emulador.
 - [x] Logotipo de la aplicación en la pantalla del menú.
 - [x] Módulo de inicio de sesión desarrollado en Kotlin con Android Studio.
 - [x] Gestión de citas con persistencia en Cloud Firestore.
+- [x] Historial de citas pasadas y canceladas.
 - [x] Pantalla de contacto con accesos directos a teléfono, WhatsApp, correo y mapas.
 - [x] Catálogo de tratamientos con pantalla de detalle.
 

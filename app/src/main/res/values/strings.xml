@@ -105,6 +105,13 @@
     <string name="loading_saving_appointment">Agendando cita…</string>
     <string name="loading_cancel_appointment">Cancelando cita…</string>
 
+    <!-- Historial -->
+    <string name="history_title">Historial</string>
+    <string name="history_subtitle">Citas pasadas y canceladas</string>
+    <string name="history_empty_title">Sin historial todavía</string>
+    <string name="history_empty_message">Aquí verás tus citas pasadas y las que hayas cancelado.</string>
+    <string name="loading_history">Cargando historial…</string>
+
     <!-- Contacto -->
     <string name="contact_title">Contacto</string>
     <string name="contact_subtitle">Estamos para ayudarte</string>
