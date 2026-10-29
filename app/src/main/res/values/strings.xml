@@ -127,6 +127,16 @@
     <string name="contact_whatsapp_message">Hola, quiero agendar una cita en The White Smile.</string>
     <string name="contact_no_app">No hay una aplicación instalada para completar esta acción</string>
 
+    <!-- Tratamientos -->
+    <string name="treatments_title">Tratamientos</string>
+    <string name="treatments_subtitle">Conoce nuestros servicios</string>
+    <string name="treatments_empty">No hay tratamientos disponibles</string>
+    <string name="treatments_duration">Duración aproximada: %1$d minutos</string>
+    <string name="treatments_duration_short">%1$d min</string>
+    <string name="treatment_section_description">Descripción</string>
+    <string name="treatment_section_recommendations">Recomendaciones</string>
+    <string name="treatments_not_found">No se encontró el tratamiento</string>
+
     <!-- Errores de Firestore (traducidos) -->
     <string name="error_firestore_permission">No tienes permisos para acceder a tus citas. Revisa las reglas de Firestore</string>
     <string name="error_firestore_not_found">La cita ya no existe</string>

@@ -3,11 +3,13 @@ package com.example.the_white_smile.testing
 import android.app.Activity
 import com.example.the_white_smile.data.AppointmentRepository
 import com.example.the_white_smile.data.AuthRepository
+import com.example.the_white_smile.data.TreatmentRepository
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.ConnectivityChecker
 import com.example.the_white_smile.domain.EmailValidator
 import com.example.the_white_smile.domain.SessionUser
+import com.example.the_white_smile.domain.Treatment
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -154,4 +156,15 @@ class FakeAppointmentRepository : AppointmentRepository {
         lastCancelledId = id
         return cancelResult
     }
+}
+
+/** Repositorio falso del catalogo de tratamientos. */
+class FakeTreatmentRepository(
+    private val treatments: List<Treatment> = emptyList()
+) : TreatmentRepository {
+
+    override fun getTreatments(): List<Treatment> = treatments
+
+    override fun getTreatment(id: String): Treatment? =
+        treatments.firstOrNull { it.id == id }
 }

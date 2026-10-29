@@ -176,7 +176,11 @@ class MenuActivity : AppCompatActivity() {
                 android.R.drawable.ic_menu_my_calendar,
                 AppointmentsActivity::class.java
             ),
-            MenuOption(R.string.menu_option_treatments, android.R.drawable.ic_menu_agenda),
+            MenuOption(
+                R.string.menu_option_treatments,
+                android.R.drawable.ic_menu_agenda,
+                TreatmentsActivity::class.java
+            ),
             MenuOption(
                 R.string.menu_option_profile,
                 android.R.drawable.ic_menu_myplaces,
