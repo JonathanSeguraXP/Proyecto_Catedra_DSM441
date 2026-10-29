@@ -3,11 +3,13 @@ package com.example.the_white_smile.testing
 import android.app.Activity
 import com.example.the_white_smile.data.AppointmentRepository
 import com.example.the_white_smile.data.AuthRepository
+import com.example.the_white_smile.data.DentistRepository
 import com.example.the_white_smile.data.TreatmentRepository
 import com.example.the_white_smile.data.UserRepository
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.ConnectivityChecker
+import com.example.the_white_smile.domain.Dentist
 import com.example.the_white_smile.domain.EmailValidator
 import com.example.the_white_smile.domain.SessionUser
 import com.example.the_white_smile.domain.Treatment
@@ -182,5 +184,71 @@ class FakeUserRepository : UserRepository {
         calls++
         error?.let { return Result.failure(it) }
         return Result.success(profile)
+    }
+}
+
+/**
+ * Repositorio falso de dentistas: expone un flujo controlable y registra
+ * las cuentas creadas y los cambios de estado.
+ */
+class FakeDentistRepository : DentistRepository {
+
+    val dentists = MutableStateFlow<List<Dentist>>(emptyList())
+
+    var observeError: Throwable? = null
+
+    var createCalls = 0
+    var lastName: String? = null
+    var lastEmail: String? = null
+    var lastPassword: String? = null
+    var lastSpecialty: String? = null
+    var createResult: Result<Dentist>? = null
+
+    var setActiveCalls = 0
+    var lastActiveId: String? = null
+    var lastActiveValue: Boolean? = null
+    var setActiveResult: Result<Unit> = Result.success(Unit)
+
+    override fun observeDentists(): Flow<List<Dentist>> {
+        val error = observeError
+        return if (error != null) flow { throw error } else dentists.asStateFlow()
+    }
+
+    override suspend fun createDentist(
+        displayName: String,
+        email: String,
+        password: String,
+        specialty: String
+    ): Result<Dentist> {
+        createCalls++
+        lastName = displayName
+        lastEmail = email
+        lastPassword = password
+        lastSpecialty = specialty
+
+        createResult?.let { return it }
+
+        val dentist = Dentist(
+            id = "dentist-$createCalls",
+            displayName = displayName,
+            email = email,
+            specialty = specialty
+        )
+        dentists.value = dentists.value + dentist
+        return Result.success(dentist)
+    }
+
+    override suspend fun setActive(dentistId: String, active: Boolean): Result<Unit> {
+        setActiveCalls++
+        lastActiveId = dentistId
+        lastActiveValue = active
+
+        setActiveResult
+            .onSuccess {
+                dentists.value = dentists.value.map {
+                    if (it.id == dentistId) it.copy(active = active) else it
+                }
+            }
+        return setActiveResult
     }
 }

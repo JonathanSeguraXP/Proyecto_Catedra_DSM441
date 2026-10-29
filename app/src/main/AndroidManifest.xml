@@ -52,6 +52,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".DentistsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".AppointmentsActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

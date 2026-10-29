@@ -9,7 +9,8 @@ gestión del perfil del usuario, la administración de citas con Cloud Firestore
 historial de citas pasadas y canceladas, un catálogo de tratamientos con su detalle,
 una pantalla de contacto con accesos directos a las aplicaciones del dispositivo,
 una sección de ayuda con preguntas frecuentes y un menú que se adapta al rol del
-usuario (paciente, dentista o administrador).
+usuario (paciente, dentista o administrador). El administrador puede crear las cuentas
+de los dentistas desde la aplicación, sin cerrar su propia sesión.
 
 ## Descripción general
 
@@ -58,6 +59,22 @@ implementación de datos sin modificar la interfaz de usuario.
 - Si la lectura del perfil falla, la aplicación continúa como paciente en lugar de
   bloquear el acceso.
 - El administrador inicial se crea una sola vez de forma manual (ver configuración).
+
+### Dentistas (administrador)
+
+- Pantalla exclusiva del administrador, accesible desde la opción Dentistas del menú.
+- Listado en tiempo real de los dentistas con nombre, especialidad, correo y estado.
+- Creación de la cuenta del dentista con nombre, especialidad, correo y contraseña
+  temporal. Incluye validaciones de campos vacíos, formato del correo, contraseña de
+  al menos 6 caracteres y conexión a internet.
+- La cuenta se crea con una **instancia secundaria de FirebaseApp**, de modo que el
+  administrador no pierde su sesión. Al terminar, la sesión secundaria se cierra.
+- El perfil se guarda en `dentists/{uid}` y el rol `DENTIST` en `users/{uid}`. Si el
+  guardado del perfil falla, se elimina la cuenta recién creada para no dejarla a medias.
+- Interruptor para activar o desactivar un dentista sin eliminar su cuenta. Los
+  dentistas inactivos no se ofrecerán al agendar citas en la siguiente etapa.
+- Nota: desactivar un dentista no bloquea su inicio de sesión, porque deshabilitar una
+  cuenta de Authentication requiere el SDK de administrador o Cloud Functions.
 
 ### Perfil de usuario
 
@@ -139,8 +156,8 @@ El proyecto se divide en las siguientes capas:
 |------|---------|-----------------|
 | Vista | `*Activity.kt` | Presenta la pantalla, escucha los eventos y gestiona la navegación. No accede directamente a Firebase. |
 | Presentación | `ui/` | ViewModel con el estado (`StateFlow`) y los eventos de una sola vez (`SharedFlow`). |
-| Dominio | `domain/` | Contratos y modelos sin dependencias de Android: `ConnectivityChecker`, `EmailValidator`, `SessionUser`, `AuthResult`, `Appointment`, `AppointmentStatus`, `Treatment`, `UserRole` y `UserProfile`. |
-| Datos | `data/` | Contratos `AuthRepository`, `AppointmentRepository`, `TreatmentRepository` y `UserRepository` con sus implementaciones: Firebase Auth, Cloud Firestore, catálogo local, estado de la red y validación del correo. |
+| Dominio | `domain/` | Contratos y modelos sin dependencias de Android: `ConnectivityChecker`, `EmailValidator`, `SessionUser`, `AuthResult`, `Appointment`, `AppointmentStatus`, `Treatment`, `UserRole`, `UserProfile` y `Dentist`. |
+| Datos | `data/` | Contratos `AuthRepository`, `AppointmentRepository`, `TreatmentRepository`, `UserRepository` y `DentistRepository` con sus implementaciones: Firebase Auth, instancia secundaria para crear cuentas, Cloud Firestore, catálogo local, estado de la red y validación del correo. |
 | Utilidades | `core/`, `util/` | Inyección de dependencias manual, adaptación de `Task` a corrutinas, formatos de fecha y traducción de errores de Auth y Firestore. |
 
 El flujo de una operación es el siguiente: la Activity invoca un método del ViewModel;
@@ -162,6 +179,7 @@ app/src/main/java/com/example/the_white_smile/
   TreatmentsActivity.kt          # Vista del catálogo de tratamientos
   TreatmentDetailActivity.kt     # Vista del detalle de un tratamiento
   HelpActivity.kt                # Vista de ayuda con preguntas frecuentes
+  DentistsActivity.kt            # Vista de dentistas del administrador
   core/
     ServiceLocator.kt            # Inyección de dependencias manual
     TaskExtensions.kt            # Adaptación de Task de Firebase a corrutinas
@@ -175,6 +193,10 @@ app/src/main/java/com/example/the_white_smile/
     LocalTreatmentRepository.kt  # Catálogo local de ejemplo
     UserRepository.kt            # Contrato de perfiles y roles
     FirestoreUserRepository.kt   # Perfiles en users/{uid}
+    DentistRepository.kt         # Contrato de administración de dentistas
+    DentistAccountCreator.kt     # Contrato para crear cuentas aisladas
+    FirebaseDentistAccountCreator.kt # Instancia secundaria de FirebaseApp
+    FirestoreDentistRepository.kt    # Dentistas y sus cuentas
     AndroidConnectivityChecker.kt
     AndroidEmailValidator.kt
   domain/
@@ -186,6 +208,7 @@ app/src/main/java/com/example/the_white_smile/
     Treatment.kt                 # Modelo de un tratamiento
     UserRole.kt                  # Roles: paciente, dentista y administrador
     UserProfile.kt               # Perfil del usuario con su rol
+    Dentist.kt                   # Dentista con especialidad y estado
   ui/
     login/                       # LoginViewModel, estado y eventos
     register/                    # RegisterViewModel, estado y eventos
@@ -195,6 +218,7 @@ app/src/main/java/com/example/the_white_smile/
     history/                     # HistoryViewModel, estado y eventos
     treatments/                  # TreatmentsViewModel, detalle y adaptador
     help/                        # HelpViewModel, catálogo y adaptador
+    dentists/                    # DentistsViewModel, estado y adaptador
   util/
     FirebaseErrors.kt            # Traducción de errores de Firebase Auth
     FirestoreErrors.kt           # Traducción de errores de Cloud Firestore
@@ -221,6 +245,8 @@ app/src/test/java/com/example/the_white_smile/
     TreatmentsViewModelTest.kt   # Pruebas del catálogo y del detalle
   ui/help/
     HelpViewModelTest.kt         # Pruebas de las preguntas desplegables
+  ui/dentists/
+    DentistsViewModelTest.kt     # Pruebas de cuentas y estados de dentistas
   util/
     ContactLinksTest.kt          # Pruebas de los enlaces externos
 
@@ -240,6 +266,9 @@ app/src/main/res/
     activity_treatment_detail.xml # Diseño del detalle del tratamiento
     activity_help.xml            # Diseño de la pantalla de ayuda
     item_faq.xml                 # Pregunta desplegable
+    activity_dentists.xml        # Lista de dentistas del administrador
+    item_dentist.xml             # Dentista con su estado
+    dialog_new_dentist.xml       # Formulario de nueva cuenta
   values/                        # Cadenas de texto, arreglos, colores y temas
   drawable/                      # Iconos de la interfaz
 ```
@@ -272,7 +301,8 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    para que el inicio de sesión con Google funcione correctamente.
 6. En Firestore Database, crear la base de datos y publicar las reglas. Cada usuario
    puede leer su propio perfil; solo el administrador puede modificarlo. Las citas
-   siguen limitadas al usuario dueño del documento:
+   siguen limitadas al usuario dueño del documento. Los dentistas son visibles para
+   todos los usuarios autenticados, pero solo el administrador puede modificarlos:
 
 ```
 rules_version = '2';
@@ -287,6 +317,11 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+    }
+
+    match /dentists/{dentistId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     match /users/{uid}/appointments/{appointmentId} {
@@ -305,6 +340,9 @@ service cloud.firestore {
       “Panel de administración”.
    La escritura desde la consola omite las reglas, por lo que este paso siempre
    funciona aunque las reglas estén publicadas.
+8. La creación de cuentas de dentistas desde la app usa una instancia secundaria de
+   `FirebaseApp`, por lo que no requiere Cloud Functions ni el plan Blaze. Solo debe
+   estar habilitado el método de correo electrónico y contraseña.
 
 ### 3. Compilar y ejecutar
 
@@ -331,6 +369,8 @@ identificador y la integridad de los datos locales. `HelpViewModelTest` verifica
 catálogo de preguntas y el despliegue de una sola respuesta a la vez.
 `MenuViewModelTest` comprueba el saludo, la lectura del rol, el caso de paciente sin
 perfil, el manejo del error de lectura y el cierre de sesión.
+`DentistsViewModelTest` verifica la lista de dentistas, las validaciones de la nueva
+cuenta, la creación, el manejo de errores y la activación o desactivación.
 `ContactLinksTest` verifica la construcción de los enlaces de teléfono, WhatsApp,
 correo y mapas. Las pruebas utilizan dobles de prueba, por lo que no requieren
 conexión, Firebase ni emulador.
@@ -356,7 +396,12 @@ conexión, Firebase ni emulador.
     otra; probar el botón Ir a Contacto.
 15. Iniciar sesión con la cuenta de administrador y verificar que el menú muestre
     “Panel de administración”; con una cuenta sin perfil debe mostrarse como paciente.
-16. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+16. Abrir la opción Dentistas, crear una cuenta con nombre, especialidad, correo y
+    contraseña, y comprobar que aparezca en la lista sin cerrar la sesión del admin.
+17. Cerrar sesión e iniciar sesión con la cuenta del dentista recién creada; debe
+    entrar al menú del dentista.
+18. Volver a la cuenta de administrador y desactivar al dentista desde el interruptor.
+19. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -372,6 +417,7 @@ conexión, Firebase ni emulador.
 - [x] Catálogo de tratamientos con pantalla de detalle.
 - [x] Pantalla de ayuda con preguntas frecuentes desplegables.
 - [x] Roles de paciente, dentista y administrador con menú adaptado.
+- [x] Creación de cuentas de dentistas desde la app por parte del administrador.
 
 ## Autor
 

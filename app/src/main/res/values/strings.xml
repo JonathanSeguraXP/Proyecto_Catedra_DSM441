@@ -59,6 +59,7 @@
     <string name="menu_option_history">Historial</string>
     <string name="menu_option_contact">Contacto</string>
     <string name="menu_option_help">Ayuda</string>
+    <string name="menu_option_dentists">Dentistas</string>
     <string name="menu_coming_soon">Próximamente disponible</string>
 
     <!-- Perfil -->
@@ -167,6 +168,29 @@
     <string name="treatment_section_description">Descripción</string>
     <string name="treatment_section_recommendations">Recomendaciones</string>
     <string name="treatments_not_found">No se encontró el tratamiento</string>
+
+    <!-- Dentistas (administrador) -->
+    <string name="dentists_title">Dentistas</string>
+    <string name="dentists_empty_title">No hay dentistas registrados</string>
+    <string name="dentists_empty_message">Crea la primera cuenta para que los pacientes puedan elegir con quién agendar.</string>
+    <string name="dentists_new">Nuevo dentista</string>
+    <string name="dentists_dialog_title">Nuevo dentista</string>
+    <string name="dentists_name_hint">Nombre completo</string>
+    <string name="dentists_specialty_hint">Especialidad</string>
+    <string name="dentists_email_hint">Correo electrónico</string>
+    <string name="dentists_password_hint">Contraseña temporal</string>
+    <string name="dentists_dialog_hint">La cuenta se crea sin cerrar tu sesión. Comparte la contraseña con el dentista para que inicie sesión.</string>
+    <string name="dentists_create">Crear cuenta</string>
+    <string name="dentists_created">Cuenta creada para %1$s</string>
+    <string name="dentists_error_name">Ingresa el nombre del dentista</string>
+    <string name="dentists_error_specialty">Ingresa la especialidad</string>
+    <string name="dentists_error_email">Ingresa un correo válido</string>
+    <string name="dentists_error_password">La contraseña debe tener al menos 6 caracteres</string>
+    <string name="dentists_active">Activo</string>
+    <string name="dentists_inactive">Inactivo</string>
+    <string name="dentists_activated">Dentista activado</string>
+    <string name="dentists_deactivated">Dentista desactivado</string>
+    <string name="loading_creating_dentist">Creando cuenta…</string>
 
     <!-- Errores de Firestore (traducidos) -->
     <string name="error_firestore_permission">No tienes permisos para acceder a tus citas. Revisa las reglas de Firestore</string>
