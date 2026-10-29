@@ -4,8 +4,10 @@ import com.example.the_white_smile.data.AppointmentRepository
 import com.example.the_white_smile.data.AuthRepository
 import com.example.the_white_smile.data.FirebaseAuthRepository
 import com.example.the_white_smile.data.FirestoreAppointmentRepository
+import com.example.the_white_smile.data.FirestoreUserRepository
 import com.example.the_white_smile.data.LocalTreatmentRepository
 import com.example.the_white_smile.data.TreatmentRepository
+import com.example.the_white_smile.data.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -26,4 +28,6 @@ object ServiceLocator {
     }
 
     val treatmentRepository: TreatmentRepository by lazy { LocalTreatmentRepository }
+
+    val userRepository: UserRepository by lazy { FirestoreUserRepository(firestore) }
 }

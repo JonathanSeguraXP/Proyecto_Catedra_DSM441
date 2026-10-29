@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.the_white_smile.domain.UserRole
 import com.example.the_white_smile.ui.menu.MenuEvent
 import com.example.the_white_smile.ui.menu.MenuUiState
 import com.example.the_white_smile.ui.menu.MenuViewModel
@@ -32,15 +33,16 @@ class MenuActivity : AppCompatActivity() {
     private val viewModel: MenuViewModel by viewModels { MenuViewModel.factory() }
 
     private lateinit var tvGreeting: TextView
+    private lateinit var tvMenuDescription: TextView
+    private lateinit var grid: GridLayout
+    private var renderedRole: UserRole? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_menu)
 
-        tvGreeting = findViewById(R.id.tvGreeting)
-
+        bindViews()
         setupToolbar()
-        setupMenuGrid()
         setupBackHandler()
         observeViewModel()
 
@@ -59,6 +61,12 @@ class MenuActivity : AppCompatActivity() {
     }
 
     // ---------- Barra superior ----------
+
+    private fun bindViews() {
+        tvGreeting = findViewById(R.id.tvGreeting)
+        tvMenuDescription = findViewById(R.id.tvMenuDescription)
+        grid = findViewById(R.id.gridMenu)
+    }
 
     private fun setupToolbar() {
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
@@ -95,6 +103,19 @@ class MenuActivity : AppCompatActivity() {
         tvGreeting.text = state.displayName
             ?.let { getString(R.string.menu_greeting, it) }
             ?: getString(R.string.menu_welcome)
+
+        val role = state.role ?: return
+        tvMenuDescription.setText(
+            when (role) {
+                UserRole.PATIENT -> R.string.menu_description
+                UserRole.DENTIST -> R.string.menu_description_dentist
+                UserRole.ADMIN -> R.string.menu_description_admin
+            }
+        )
+
+        if (role == renderedRole) return
+        renderedRole = role
+        renderMenu(role)
     }
 
     private fun handleEvent(event: MenuEvent) {
@@ -106,25 +127,99 @@ class MenuActivity : AppCompatActivity() {
         }
     }
 
-    /** Construye la grilla de opciones del menu. */
-    private fun setupMenuGrid() {
-        val grid = findViewById<GridLayout>(R.id.gridMenu)
+    /** Construye la grilla de opciones correspondiente al rol. */
+    private fun renderMenu(role: UserRole) {
+        grid.removeAllViews()
         val inflater = LayoutInflater.from(this)
 
-        MENU_OPTIONS.forEach { option ->
+        menuOptionsFor(role).forEach { option ->
             val item = inflater.inflate(R.layout.item_menu_option, grid, false)
             item.findViewById<ImageView>(R.id.ivOptionIcon).setImageResource(option.icon)
             item.findViewById<TextView>(R.id.tvOptionLabel).setText(option.label)
             item.setOnClickListener {
-                val destination = option.destination
-                if (destination != null) {
-                    startActivity(Intent(this, destination))
-                } else {
-                    toast(R.string.menu_coming_soon)
-                }
+                startActivity(Intent(this, option.destination))
             }
             grid.addView(item)
         }
+    }
+
+    private fun menuOptionsFor(role: UserRole): List<MenuOption> = when (role) {
+        UserRole.PATIENT -> listOf(
+            MenuOption(
+                R.string.menu_option_appointments,
+                android.R.drawable.ic_menu_my_calendar,
+                AppointmentsActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_treatments,
+                android.R.drawable.ic_menu_agenda,
+                TreatmentsActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_profile,
+                android.R.drawable.ic_menu_myplaces,
+                ProfileActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_history,
+                android.R.drawable.ic_menu_recent_history,
+                HistoryActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_contact,
+                android.R.drawable.ic_dialog_email,
+                ContactActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_help,
+                android.R.drawable.ic_menu_help,
+                HelpActivity::class.java
+            )
+        )
+        UserRole.DENTIST -> listOf(
+            MenuOption(
+                R.string.menu_option_treatments,
+                android.R.drawable.ic_menu_agenda,
+                TreatmentsActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_profile,
+                android.R.drawable.ic_menu_myplaces,
+                ProfileActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_contact,
+                android.R.drawable.ic_dialog_email,
+                ContactActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_help,
+                android.R.drawable.ic_menu_help,
+                HelpActivity::class.java
+            )
+        )
+        UserRole.ADMIN -> listOf(
+            MenuOption(
+                R.string.menu_option_treatments,
+                android.R.drawable.ic_menu_agenda,
+                TreatmentsActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_profile,
+                android.R.drawable.ic_menu_myplaces,
+                ProfileActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_contact,
+                android.R.drawable.ic_dialog_email,
+                ContactActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_help,
+                android.R.drawable.ic_menu_help,
+                HelpActivity::class.java
+            )
+        )
     }
 
     // ---------- Navegacion y salida ----------
@@ -166,41 +261,6 @@ class MenuActivity : AppCompatActivity() {
     private data class MenuOption(
         val label: Int,
         val icon: Int,
-        val destination: Class<*>? = null
+        val destination: Class<*>
     )
-
-    private companion object {
-        val MENU_OPTIONS = listOf(
-            MenuOption(
-                R.string.menu_option_appointments,
-                android.R.drawable.ic_menu_my_calendar,
-                AppointmentsActivity::class.java
-            ),
-            MenuOption(
-                R.string.menu_option_treatments,
-                android.R.drawable.ic_menu_agenda,
-                TreatmentsActivity::class.java
-            ),
-            MenuOption(
-                R.string.menu_option_profile,
-                android.R.drawable.ic_menu_myplaces,
-                ProfileActivity::class.java
-            ),
-            MenuOption(
-                R.string.menu_option_history,
-                android.R.drawable.ic_menu_recent_history,
-                HistoryActivity::class.java
-            ),
-            MenuOption(
-                R.string.menu_option_contact,
-                android.R.drawable.ic_dialog_email,
-                ContactActivity::class.java
-            ),
-            MenuOption(
-                R.string.menu_option_help,
-                android.R.drawable.ic_menu_help,
-                HelpActivity::class.java
-            )
-        )
-    }
 }

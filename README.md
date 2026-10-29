@@ -7,8 +7,9 @@ registro de cuentas, recuperación de contraseña, acceso con proveedores extern
 (Google y GitHub), una pantalla de menú principal posterior al inicio de sesión, la
 gestión del perfil del usuario, la administración de citas con Cloud Firestore, el
 historial de citas pasadas y canceladas, un catálogo de tratamientos con su detalle,
-una pantalla de contacto con accesos directos a las aplicaciones del dispositivo y
-una sección de ayuda con preguntas frecuentes.
+una pantalla de contacto con accesos directos a las aplicaciones del dispositivo,
+una sección de ayuda con preguntas frecuentes y un menú que se adapta al rol del
+usuario (paciente, dentista o administrador).
 
 ## Descripción general
 
@@ -42,6 +43,21 @@ implementación de datos sin modificar la interfaz de usuario.
 - Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
   historial, contacto y ayuda). Todas las opciones abren su pantalla correspondiente.
 - Confirmación antes de salir de la aplicación.
+
+### Roles de usuario
+
+- Tres roles: paciente (`PATIENT`), dentista (`DENTIST`) y administrador (`ADMIN`).
+- El rol se guarda en el documento `users/{uid}` de Cloud Firestore, en el campo
+  `role`. Los pacientes no requieren documento: si no existe, se asumen `PATIENT`.
+- El menú se construye según el rol:
+  - **Paciente:** Citas, Tratamientos, Perfil, Historial, Contacto y Ayuda.
+  - **Dentista:** Tratamientos, Perfil, Contacto y Ayuda. En las siguientes etapas
+    se agregará su agenda.
+  - **Administrador:** Tratamientos, Perfil, Contacto y Ayuda. En las siguientes
+    etapas se agregará la gestión de dentistas.
+- Si la lectura del perfil falla, la aplicación continúa como paciente en lugar de
+  bloquear el acceso.
+- El administrador inicial se crea una sola vez de forma manual (ver configuración).
 
 ### Perfil de usuario
 
@@ -109,7 +125,7 @@ implementación de datos sin modificar la interfaz de usuario.
 | Android SDK (minSdk 24, targetSdk 37) | Plataforma |
 | Material 3 | Interfaz de usuario |
 | Firebase Authentication | Autenticación de usuarios |
-| Cloud Firestore | Persistencia de las citas por usuario |
+| Cloud Firestore | Persistencia de las citas, los perfiles y los roles |
 | Firebase Auth OAuth (Google, GitHub) | Inicio de sesión con proveedores |
 | Android Credential Manager | Gestión de credenciales |
 | MVVM y Kotlin Coroutines | Separación entre vista, estado y datos |
@@ -123,8 +139,8 @@ El proyecto se divide en las siguientes capas:
 |------|---------|-----------------|
 | Vista | `*Activity.kt` | Presenta la pantalla, escucha los eventos y gestiona la navegación. No accede directamente a Firebase. |
 | Presentación | `ui/` | ViewModel con el estado (`StateFlow`) y los eventos de una sola vez (`SharedFlow`). |
-| Dominio | `domain/` | Contratos y modelos sin dependencias de Android: `ConnectivityChecker`, `EmailValidator`, `SessionUser`, `AuthResult`, `Appointment`, `AppointmentStatus` y `Treatment`. |
-| Datos | `data/` | Contratos `AuthRepository`, `AppointmentRepository` y `TreatmentRepository` con sus implementaciones: Firebase Auth, Cloud Firestore, catálogo local, estado de la red y validación del correo. |
+| Dominio | `domain/` | Contratos y modelos sin dependencias de Android: `ConnectivityChecker`, `EmailValidator`, `SessionUser`, `AuthResult`, `Appointment`, `AppointmentStatus`, `Treatment`, `UserRole` y `UserProfile`. |
+| Datos | `data/` | Contratos `AuthRepository`, `AppointmentRepository`, `TreatmentRepository` y `UserRepository` con sus implementaciones: Firebase Auth, Cloud Firestore, catálogo local, estado de la red y validación del correo. |
 | Utilidades | `core/`, `util/` | Inyección de dependencias manual, adaptación de `Task` a corrutinas, formatos de fecha y traducción de errores de Auth y Firestore. |
 
 El flujo de una operación es el siguiente: la Activity invoca un método del ViewModel;
@@ -157,6 +173,8 @@ app/src/main/java/com/example/the_white_smile/
     FirestoreAppointmentRepository.kt  # Implementación con Cloud Firestore
     TreatmentRepository.kt       # Contrato del catálogo de tratamientos
     LocalTreatmentRepository.kt  # Catálogo local de ejemplo
+    UserRepository.kt            # Contrato de perfiles y roles
+    FirestoreUserRepository.kt   # Perfiles en users/{uid}
     AndroidConnectivityChecker.kt
     AndroidEmailValidator.kt
   domain/
@@ -166,6 +184,8 @@ app/src/main/java/com/example/the_white_smile/
     EmailValidator.kt
     Appointment.kt               # Modelo y estados de una cita
     Treatment.kt                 # Modelo de un tratamiento
+    UserRole.kt                  # Roles: paciente, dentista y administrador
+    UserProfile.kt               # Perfil del usuario con su rol
   ui/
     login/                       # LoginViewModel, estado y eventos
     register/                    # RegisterViewModel, estado y eventos
@@ -189,6 +209,8 @@ app/src/test/java/com/example/the_white_smile/
     Fakes.kt                     # Dobles de repositorio, red y validador
   ui/login/
     LoginViewModelTest.kt        # Pruebas del LoginViewModel
+  ui/menu/
+    MenuViewModelTest.kt         # Pruebas del menú y de los roles
   ui/profile/
     ProfileViewModelTest.kt      # Pruebas del ProfileViewModel
   ui/appointments/
@@ -248,20 +270,41 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    - GitHub, configurando previamente una OAuth App en GitHub.
 5. Registrar el SHA-1 de la firma de depuración en la configuración del proyecto
    para que el inicio de sesión con Google funcione correctamente.
-6. En Firestore Database, crear la base de datos y publicar las reglas que limitan
-   cada documento al usuario autenticado:
+6. En Firestore Database, crear la base de datos y publicar las reglas. Cada usuario
+   puede leer su propio perfil; solo el administrador puede modificarlo. Las citas
+   siguen limitadas al usuario dueño del documento:
 
 ```
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "ADMIN";
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+    }
+
     match /users/{uid}/appointments/{appointmentId} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }
 ```
+
+7. Crear el administrador inicial, una sola vez, desde Firebase Console:
+   1. En Authentication, agregar un usuario con correo y contraseña.
+   2. Copiar el UID de esa cuenta.
+   3. En Firestore, crear el documento `users/{uid}` con los campos
+      `email` (cadena), `displayName` (cadena) y `role` (`"ADMIN"`).
+   4. Iniciar sesión en la app con esa cuenta: el menú mostrará
+      “Panel de administración”.
+   La escritura desde la consola omite las reglas, por lo que este paso siempre
+   funciona aunque las reglas estén publicadas.
 
 ### 3. Compilar y ejecutar
 
@@ -286,6 +329,8 @@ las citas pasadas y canceladas, el orden descendente, el estado vacío y el mane
 errores. `TreatmentsViewModelTest` comprueba el catálogo, la búsqueda por
 identificador y la integridad de los datos locales. `HelpViewModelTest` verifica el
 catálogo de preguntas y el despliegue de una sola respuesta a la vez.
+`MenuViewModelTest` comprueba el saludo, la lectura del rol, el caso de paciente sin
+perfil, el manejo del error de lectura y el cierre de sesión.
 `ContactLinksTest` verifica la construcción de los enlaces de teléfono, WhatsApp,
 correo y mapas. Las pruebas utilizan dobles de prueba, por lo que no requieren
 conexión, Firebase ni emulador.
@@ -309,7 +354,9 @@ conexión, Firebase ni emulador.
 13. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
 14. Abrir la opción Ayuda, desplegar una pregunta y comprobar que se cierre al abrir
     otra; probar el botón Ir a Contacto.
-15. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+15. Iniciar sesión con la cuenta de administrador y verificar que el menú muestre
+    “Panel de administración”; con una cuenta sin perfil debe mostrarse como paciente.
+16. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -324,6 +371,7 @@ conexión, Firebase ni emulador.
 - [x] Pantalla de contacto con accesos directos a teléfono, WhatsApp, correo y mapas.
 - [x] Catálogo de tratamientos con pantalla de detalle.
 - [x] Pantalla de ayuda con preguntas frecuentes desplegables.
+- [x] Roles de paciente, dentista y administrador con menú adaptado.
 
 ## Autor
 

@@ -50,6 +50,8 @@
     <!-- Menú -->
     <string name="menu_welcome">Menú principal</string>
     <string name="menu_description">Selecciona una opción</string>
+    <string name="menu_description_dentist">Panel del dentista</string>
+    <string name="menu_description_admin">Panel de administración</string>
     <string name="menu_greeting">Hola, %1$s</string>
     <string name="menu_option_appointments">Citas</string>
     <string name="menu_option_treatments">Tratamientos</string>

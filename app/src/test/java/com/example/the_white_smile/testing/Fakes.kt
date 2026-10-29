@@ -4,12 +4,14 @@ import android.app.Activity
 import com.example.the_white_smile.data.AppointmentRepository
 import com.example.the_white_smile.data.AuthRepository
 import com.example.the_white_smile.data.TreatmentRepository
+import com.example.the_white_smile.data.UserRepository
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.ConnectivityChecker
 import com.example.the_white_smile.domain.EmailValidator
 import com.example.the_white_smile.domain.SessionUser
 import com.example.the_white_smile.domain.Treatment
+import com.example.the_white_smile.domain.UserProfile
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -167,4 +169,18 @@ class FakeTreatmentRepository(
 
     override fun getTreatment(id: String): Treatment? =
         treatments.firstOrNull { it.id == id }
+}
+
+/** Repositorio falso de perfiles y roles de usuario. */
+class FakeUserRepository : UserRepository {
+
+    var profile: UserProfile? = null
+    var error: Throwable? = null
+    var calls = 0
+
+    override suspend fun getProfile(uid: String): Result<UserProfile?> {
+        calls++
+        error?.let { return Result.failure(it) }
+        return Result.success(profile)
+    }
 }
