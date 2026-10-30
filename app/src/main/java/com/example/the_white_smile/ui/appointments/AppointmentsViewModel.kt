@@ -14,11 +14,13 @@ import com.example.the_white_smile.data.AppointmentRepository
 import com.example.the_white_smile.data.AuthRepository
 import com.example.the_white_smile.data.DentistRepository
 import com.example.the_white_smile.data.TreatmentRepository
+import com.example.the_white_smile.data.TreatmentPricingRepository
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AppointmentSchedule
 import com.example.the_white_smile.domain.AppointmentStatus
 import com.example.the_white_smile.domain.ConnectivityChecker
 import com.example.the_white_smile.domain.SlotConflictException
+import com.example.the_white_smile.util.MoneyFormats
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -40,11 +43,13 @@ class AppointmentsViewModel(
     private val dentistRepository: DentistRepository,
     private val treatmentRepository: TreatmentRepository,
     private val authRepository: AuthRepository,
-    private val connectivity: ConnectivityChecker
+    private val connectivity: ConnectivityChecker,
+    private val pricingRepository: TreatmentPricingRepository? = null
 ) : ViewModel() {
 
+    private val baseTreatments = treatmentRepository.getTreatments()
     private val _uiState = MutableStateFlow(
-        AppointmentsUiState(treatments = treatmentRepository.getTreatments())
+        AppointmentsUiState(treatments = baseTreatments)
     )
     val uiState: StateFlow<AppointmentsUiState> = _uiState.asStateFlow()
 
@@ -57,6 +62,26 @@ class AppointmentsViewModel(
     init {
         observeAppointments()
         observeDentists()
+        observeTreatmentPrices()
+    }
+
+    private fun observeTreatmentPrices() {
+        val pricing = pricingRepository ?: return
+        viewModelScope.launch {
+            pricing.observePrices()
+                .catch { _events.emit(AppointmentsEvent.Error(it)) }
+                .collect { prices ->
+                    _uiState.update { state ->
+                        state.copy(
+                            treatments = baseTreatments.map { treatment ->
+                                treatment.copy(
+                                    priceCents = prices[treatment.id] ?: treatment.priceCents
+                                )
+                            }
+                        )
+                    }
+                }
+        }
     }
 
     /** La pantalla solo debe mostrarse con una sesion activa. */
@@ -133,7 +158,12 @@ class AppointmentsViewModel(
         _uiState.update { it.copy(availability = null) }
     }
 
-    fun createAppointment(treatmentId: String, startAt: Long, dentistId: String) {
+    fun createAppointment(
+        treatmentId: String,
+        startAt: Long,
+        dentistId: String,
+        depositPercent: Int = 25
+    ) {
         if (_uiState.value.isLoading) return
 
         val state = _uiState.value
@@ -146,6 +176,14 @@ class AppointmentsViewModel(
         when {
             treatment == null -> {
                 notify(R.string.appointments_error_treatment)
+                return
+            }
+            treatment.priceCents == null && pricingRepository != null -> {
+                notify(R.string.appointments_deposit_missing)
+                return
+            }
+            depositPercent != 25 && depositPercent != 50 -> {
+                notify(R.string.appointments_deposit_missing)
                 return
             }
             dentist == null -> {
@@ -172,15 +210,33 @@ class AppointmentsViewModel(
         }
 
         runOperation(R.string.loading_saving_appointment) {
-            repository.createAppointment(
-                service = treatment.name,
-                startAt = startAt,
-                treatmentId = treatment.id,
-                durationMinutes = treatment.durationMinutes,
-                dentistId = dentist.id,
-                dentistName = dentist.displayName,
-                patientName = patientName
-            )
+            val totalPriceCents = treatment.priceCents
+            val result = if (totalPriceCents == null) {
+                repository.createAppointment(
+                    service = treatment.name,
+                    startAt = startAt,
+                    treatmentId = treatment.id,
+                    durationMinutes = treatment.durationMinutes,
+                    dentistId = dentist.id,
+                    dentistName = dentist.displayName,
+                    patientName = patientName
+                )
+            } else {
+                val depositCents = MoneyFormats.percentageOf(totalPriceCents, depositPercent)
+                repository.createAppointment(
+                    service = treatment.name,
+                    startAt = startAt,
+                    treatmentId = treatment.id,
+                    durationMinutes = treatment.durationMinutes,
+                    dentistId = dentist.id,
+                    dentistName = dentist.displayName,
+                    patientName = patientName,
+                    totalPriceCents = totalPriceCents,
+                    depositCents = depositCents,
+                    depositPercent = depositPercent
+                )
+            }
+            result
                 .onSuccess {
                     clearAvailability()
                     notify(R.string.appointment_created)
@@ -273,7 +329,8 @@ class AppointmentsViewModel(
                     dentistRepository = ServiceLocator.dentistRepository(context),
                     treatmentRepository = ServiceLocator.treatmentRepository,
                     authRepository = ServiceLocator.authRepository,
-                    connectivity = AndroidConnectivityChecker(context.applicationContext)
+                    connectivity = AndroidConnectivityChecker(context.applicationContext),
+                    pricingRepository = ServiceLocator.treatmentPricingRepository
                 )
             }
         }

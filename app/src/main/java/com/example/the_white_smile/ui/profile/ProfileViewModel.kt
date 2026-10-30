@@ -139,9 +139,14 @@ class ProfileViewModel(
         }
         if (!isOnline()) return
 
-        val dentists = dentistRepository ?: return
         runOperation(R.string.loading_profile_photo) {
-            dentists.updateProfilePhoto(uid, photoBase64)
+            val saveResult = if (_uiState.value.isDentist) {
+                dentistRepository?.updateProfilePhoto(uid, photoBase64)
+            } else {
+                userRepository?.updateProfilePhoto(uid, photoBase64)
+            } ?: return@runOperation
+
+            saveResult
                 .onSuccess {
                     _uiState.update { it.copy(profilePhotoBase64 = photoBase64) }
                     notify(R.string.profile_photo_saved)

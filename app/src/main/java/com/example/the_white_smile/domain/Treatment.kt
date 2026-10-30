@@ -10,5 +10,7 @@ data class Treatment(
     val summary: String,
     val description: String,
     val durationMinutes: Int,
-    val recommendations: List<String>
+    val recommendations: List<String>,
+    /** Precio total en centavos de dolar; null significa que administracion debe configurarlo. */
+    val priceCents: Long? = null
 )

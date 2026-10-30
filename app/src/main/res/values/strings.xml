@@ -98,6 +98,29 @@
     <string name="appointments_dentist_hint">Dentista</string>
     <string name="appointments_dentist_option">%1$s · %2$s</string>
     <string name="dentist_specialty_general">Odontología general</string>
+    <string name="appointments_treatment_option">%1$s · desde %2$s</string>
+    <string name="appointments_price_total">Precio referencial desde: %1$s</string>
+    <string name="appointments_price_unconfigured">Precio pendiente de configuración</string>
+    <string name="appointments_deposit_quarter">Abonar una cuarta parte (25%)</string>
+    <string name="appointments_deposit_half">Abonar la mitad (50%)</string>
+    <string name="appointments_deposit_summary">Abono referencial pendiente en clínica: %1$s · Restante estimado: %2$s</string>
+    <string name="appointments_deposit_missing">Este servicio aún no tiene precio configurado. Consulta con el consultorio.</string>
+    <string name="appointments_deposit_pending">Abono referencial pendiente en clínica: %1$s de %2$s</string>
+    <string name="appointments_deposit_amount_label">Abono</string>
+    <string name="appointments_total_amount_label">Precio referencial desde</string>
+    <string name="treatments_price_label">Desde %1$s</string>
+    <string name="treatments_price_disclaimer">Tarifas de referencia para El Salvador. El precio final puede variar según la evaluación clínica; confírmalo con el consultorio antes del procedimiento.</string>
+    <string name="treatments_price_unconfigured">Precio por consultar</string>
+    <string name="menu_option_prices">Precios</string>
+    <string name="treatment_prices_title">Precios de tratamientos</string>
+    <string name="treatment_prices_subtitle">Tarifas de referencia desde. Ajusta cada monto a los precios reales del consultorio.</string>
+    <string name="treatment_prices_edit">Cambiar precio</string>
+    <string name="treatment_prices_from_label">Desde %1$s</string>
+    <string name="treatment_prices_enter">Precio en dólares</string>
+    <string name="treatment_prices_invalid">Ingresa un precio válido mayor que cero</string>
+    <string name="treatment_prices_saved">Precio actualizado</string>
+    <string name="treatment_prices_admin_only">Solo el administrador puede modificar precios</string>
+    <string name="treatment_prices_pending">Sin configurar</string>
     <string name="appointments_no_dentists">No hay dentistas disponibles. Pide al administrador que cree una cuenta.</string>
     <string name="appointments_error_dentist">Selecciona un dentista</string>
     <string name="appointments_dentist_label">Con %1$s</string>
@@ -119,7 +142,7 @@
     <string name="appointments_cancel_message">¿Deseas cancelar esta cita? Esta acción no se puede deshacer.</string>
     <string name="appointments_cancel_confirm">Sí, cancelar</string>
     <string name="appointments_cancel_action">Cancelar</string>
-    <string name="appointments_dialog_hint">La cita se guarda con la fecha y hora de tu dispositivo.</string>
+    <string name="appointments_dialog_hint">Los precios y abonos son referenciales; el costo final se confirma tras la evaluación. El abono queda pendiente y se paga en clínica. La cita usa la fecha y hora de tu dispositivo.</string>
     <string name="appointments_status_pending">Pendiente</string>
     <string name="appointments_status_cancelled">Cancelada</string>
     <string name="appointments_status_completed">Completada</string>
@@ -180,9 +203,9 @@
     <string name="contact_subtitle">Estamos para ayudarte</string>
     <string name="contact_clinic_name">The White Smile</string>
     <string name="contact_phone_label">Teléfono</string>
-    <string name="contact_phone_value">+503 1234-5678</string>
+    <string name="contact_phone_value">+503 2271-0431</string>
     <string name="contact_whatsapp_label">WhatsApp</string>
-    <string name="contact_whatsapp_value">+503 1234-5678</string>
+    <string name="contact_whatsapp_value">+503 6207-9134</string>
     <string name="contact_email_label">Correo electrónico</string>
     <string name="contact_email_value">contacto@thewhitesmile.com</string>
     <string name="contact_address_label">Dirección</string>
@@ -199,7 +222,7 @@
 
     <!-- Tratamientos -->
     <string name="treatments_title">Tratamientos</string>
-    <string name="treatments_subtitle">Conoce nuestros servicios</string>
+    <string name="treatments_subtitle">Conoce nuestros servicios y precios de referencia</string>
     <string name="treatments_empty">No hay tratamientos disponibles</string>
     <string name="treatments_duration">Duración aproximada: %1$d minutos</string>
     <string name="treatments_duration_short">%1$d min</string>

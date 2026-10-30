@@ -5,6 +5,7 @@ import com.example.the_white_smile.domain.UserProfile
 import com.example.the_white_smile.domain.UserRole
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -34,6 +35,13 @@ class FirestoreUserRepository(
             profilePhotoBase64 = profile.profilePhotoBase64
                 ?: dentist.getString(FIELD_PROFILE_PHOTO)
         )
+    }
+
+    override suspend fun updateProfilePhoto(uid: String, photoBase64: String): Result<Unit> = runData {
+        usersRef().document(uid)
+            .set(mapOf(FIELD_PROFILE_PHOTO to photoBase64), SetOptions.merge())
+            .awaitResult()
+        Unit
     }
 
     private fun usersRef() = firestore.collection(USERS)

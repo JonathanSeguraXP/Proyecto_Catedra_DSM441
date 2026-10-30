@@ -20,11 +20,26 @@ data class Appointment(
     val treatmentId: String? = null,
     val durationMinutes: Int = DEFAULT_DURATION_MINUTES,
     val patientId: String? = null,
-    val patientName: String? = null
+    val patientName: String? = null,
+    val totalPriceCents: Long? = null,
+    val depositCents: Long? = null,
+    val depositPercent: Int? = null,
+    val depositStatus: DepositStatus? = null
 ) {
     companion object {
         /** Duracion asumida para citas creadas antes de esta version. */
         const val DEFAULT_DURATION_MINUTES = 30
+    }
+}
+
+/** Estado del abono; PENDING significa que aún se registra para pago en clínica. */
+enum class DepositStatus {
+    PENDING,
+    PAID;
+
+    companion object {
+        fun from(value: String?): DepositStatus? =
+            values().firstOrNull { it.name == value }
     }
 }
 

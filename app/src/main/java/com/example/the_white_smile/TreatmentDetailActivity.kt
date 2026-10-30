@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.the_white_smile.ui.treatments.TreatmentDetailUiState
 import com.example.the_white_smile.ui.treatments.TreatmentDetailViewModel
+import com.example.the_white_smile.util.MoneyFormats
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 
@@ -69,6 +70,9 @@ class TreatmentDetailActivity : BaseActivity() {
         supportActionBar?.title = treatment.name
         findViewById<TextView>(R.id.tvTreatmentName).text = treatment.name
         findViewById<TextView>(R.id.tvTreatmentSummary).text = treatment.summary
+        findViewById<TextView>(R.id.tvTreatmentPrice).text = treatment.priceCents?.let {
+            getString(R.string.treatments_price_label, MoneyFormats.usd(it))
+        } ?: getString(R.string.treatments_price_unconfigured)
         findViewById<TextView>(R.id.tvTreatmentDuration).text = getString(
             R.string.treatments_duration,
             treatment.durationMinutes

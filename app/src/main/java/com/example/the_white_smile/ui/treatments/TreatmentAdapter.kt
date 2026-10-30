@@ -30,6 +30,7 @@ class TreatmentAdapter(
         private val tvName: TextView = itemView.findViewById(R.id.tvTreatmentName)
         private val tvSummary: TextView = itemView.findViewById(R.id.tvTreatmentSummary)
         private val tvDuration: TextView = itemView.findViewById(R.id.tvTreatmentDuration)
+        private val tvPrice: TextView = itemView.findViewById(R.id.tvTreatmentPrice)
 
         fun bind(treatment: Treatment, onClick: (Treatment) -> Unit) {
             tvName.text = treatment.name
@@ -38,6 +39,12 @@ class TreatmentAdapter(
                 R.string.treatments_duration_short,
                 treatment.durationMinutes
             )
+            tvPrice.text = treatment.priceCents?.let {
+                itemView.context.getString(
+                    R.string.treatments_price_label,
+                    com.example.the_white_smile.util.MoneyFormats.usd(it)
+                )
+            } ?: itemView.context.getString(R.string.treatments_price_unconfigured)
             itemView.setOnClickListener { onClick(treatment) }
         }
     }

@@ -11,6 +11,8 @@ import com.example.the_white_smile.data.FirestoreDentistRepository
 import com.example.the_white_smile.data.FirestoreUserRepository
 import com.example.the_white_smile.data.LocalTreatmentRepository
 import com.example.the_white_smile.data.TreatmentRepository
+import com.example.the_white_smile.data.TreatmentPricingRepository
+import com.example.the_white_smile.data.FirestoreTreatmentPricingRepository
 import com.example.the_white_smile.data.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -32,6 +34,10 @@ object ServiceLocator {
     }
 
     val treatmentRepository: TreatmentRepository by lazy { LocalTreatmentRepository }
+
+    val treatmentPricingRepository: TreatmentPricingRepository by lazy {
+        FirestoreTreatmentPricingRepository(firestore)
+    }
 
     val userRepository: UserRepository by lazy { FirestoreUserRepository(firestore) }
 

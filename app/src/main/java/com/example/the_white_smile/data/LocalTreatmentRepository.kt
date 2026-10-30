@@ -26,7 +26,8 @@ object LocalTreatmentRepository : TreatmentRepository {
             recommendations = listOf(
                 "Trae tus radiografías o estudios previos, si los tienes.",
                 "Indícanos los medicamentos que tomas y las alergias conocidas."
-            )
+            ),
+            priceCents = 1_500
         ),
         Treatment(
             id = "limpieza-dental",
@@ -39,7 +40,8 @@ object LocalTreatmentRepository : TreatmentRepository {
             recommendations = listOf(
                 "Se recomienda realizarla cada seis meses.",
                 "Evita alimentos muy fríos o calientes durante las primeras horas."
-            )
+            ),
+            priceCents = 3_000
         ),
         Treatment(
             id = "blanqueamiento",
@@ -52,19 +54,22 @@ object LocalTreatmentRepository : TreatmentRepository {
             recommendations = listOf(
                 "Evita café, té, vino y tabaco durante las 48 horas posteriores.",
                 "Consulta antes si tienes sensibilidad dental o restauraciones visibles."
-            )
+            ),
+            priceCents = 10_000
         ),
         Treatment(
             id = "ortodoncia",
-            name = "Ortodoncia",
-            summary = "Alineación de dientes y corrección de la mordida.",
+            name = "Valoración de ortodoncia",
+            summary = "Evaluación inicial para definir un plan de ortodoncia.",
             description = "Evaluamos la posición de tus dientes y tu mordida para definir " +
-                "el tratamiento de ortodoncia más adecuado, con brackets o alineadores.",
+                "el tratamiento de ortodoncia más adecuado. El costo del tratamiento " +
+                "completo se determina después de esta valoración.",
             durationMinutes = 45,
             recommendations = listOf(
                 "Asiste a los controles periódicos.",
                 "Mantén una higiene cuidadosa alrededor de los brackets."
-            )
+            ),
+            priceCents = 4_000
         ),
         Treatment(
             id = "endodoncia",
@@ -76,7 +81,8 @@ object LocalTreatmentRepository : TreatmentRepository {
             recommendations = listOf(
                 "Acude si presentas dolor persistente o inflamación.",
                 "Programa la restauración definitiva después del tratamiento."
-            )
+            ),
+            priceCents = 37_500
         ),
         Treatment(
             id = "extraccion",
@@ -89,7 +95,8 @@ object LocalTreatmentRepository : TreatmentRepository {
             recommendations = listOf(
                 "No hagas esfuerzos ni enjuagues fuertes durante las primeras 24 horas.",
                 "Aplica frío local y toma los medicamentos indicados."
-            )
+            ),
+            priceCents = 4_000
         ),
         Treatment(
             id = "implante-dental",
@@ -102,7 +109,8 @@ object LocalTreatmentRepository : TreatmentRepository {
             recommendations = listOf(
                 "Se requiere una valoración previa con estudios de imagen.",
                 "El cuidado diario y los controles son clave para su duración."
-            )
+            ),
+            priceCents = 90_000
         ),
         Treatment(
             id = "revision-rutina",
@@ -115,7 +123,8 @@ object LocalTreatmentRepository : TreatmentRepository {
             recommendations = listOf(
                 "Asiste cada seis meses, aunque no tengas molestias.",
                 "Aprovecha la visita para resolver tus dudas sobre higiene."
-            )
+            ),
+            priceCents = 1_000
         )
     )
 }

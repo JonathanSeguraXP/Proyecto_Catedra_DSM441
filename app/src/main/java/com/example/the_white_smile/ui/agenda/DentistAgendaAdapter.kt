@@ -12,6 +12,7 @@ import com.example.the_white_smile.R
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AppointmentStatus
 import com.example.the_white_smile.util.DateFormats
+import com.example.the_white_smile.util.MoneyFormats
 import com.google.android.material.button.MaterialButton
 
 /** Adaptador de la agenda del dentista. */
@@ -35,6 +36,7 @@ class DentistAgendaAdapter(
         private val tvService: TextView = itemView.findViewById(R.id.tvAgendaService)
         private val tvDateTime: TextView = itemView.findViewById(R.id.tvAgendaDateTime)
         private val tvDuration: TextView = itemView.findViewById(R.id.tvAgendaDuration)
+        private val tvDeposit: TextView = itemView.findViewById(R.id.tvAgendaDeposit)
         private val tvStatus: TextView = itemView.findViewById(R.id.tvAgendaStatus)
         private val btnComplete: MaterialButton =
             itemView.findViewById(R.id.btnCompleteAppointment)
@@ -54,6 +56,14 @@ class DentistAgendaAdapter(
                 R.string.appointments_duration,
                 appointment.durationMinutes
             )
+            tvDeposit.visibility = if (appointment.depositCents == null) View.GONE else View.VISIBLE
+            if (appointment.depositCents != null && appointment.totalPriceCents != null) {
+                tvDeposit.text = context.getString(
+                    R.string.appointments_deposit_pending,
+                    MoneyFormats.usd(appointment.depositCents),
+                    MoneyFormats.usd(appointment.totalPriceCents)
+                )
+            }
 
             tvStatus.setText(
                 when (appointment.status) {

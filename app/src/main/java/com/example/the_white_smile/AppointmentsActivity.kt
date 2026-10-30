@@ -24,6 +24,7 @@ import com.example.the_white_smile.ui.appointments.AppointmentsViewModel
 import com.example.the_white_smile.ui.appointments.DentistOptionAdapter
 import com.example.the_white_smile.util.DateFormats
 import com.example.the_white_smile.util.FirestoreErrors
+import com.example.the_white_smile.util.MoneyFormats
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -118,6 +119,14 @@ class AppointmentsActivity : BaseActivity() {
         if (state.isLoading) showLoading() else hideLoading()
     }
 
+    private fun treatmentOptionLabel(treatment: com.example.the_white_smile.domain.Treatment): String =
+        getString(
+            R.string.appointments_treatment_option,
+            treatment.name,
+            treatment.priceCents?.let(MoneyFormats::usd)
+                ?: getString(R.string.treatments_price_unconfigured)
+        )
+
     // ---------- Nueva cita ----------
 
     private fun showNewAppointmentDialog() {
@@ -132,6 +141,9 @@ class AppointmentsActivity : BaseActivity() {
         val actTime = content.findViewById<AutoCompleteTextView>(R.id.actAppointmentTime)
         val tvAvailabilityHint = content.findViewById<TextView>(R.id.tvAvailabilityHint)
         val tvTreatmentDuration = content.findViewById<TextView>(R.id.tvTreatmentDuration)
+        val tvTreatmentPrice = content.findViewById<TextView>(R.id.tvTreatmentPrice)
+        val depositOptions = content.findViewById<android.widget.RadioGroup>(R.id.rgDepositOptions)
+        val tvDepositSummary = content.findViewById<TextView>(R.id.tvDepositSummary)
 
         val state = viewModel.uiState.value
         val dentists = state.dentists
@@ -139,9 +151,32 @@ class AppointmentsActivity : BaseActivity() {
 
         var selectedDentistId: String? = null
         var selectedTreatmentId: String? = null
+        var selectedDepositPercent = 25
         var selectedDayStart: Long? = null
         var selectedStartAt: Long? = null
         var availableTimes: List<Long> = emptyList()
+
+        fun renderPriceBreakdown(treatment: com.example.the_white_smile.domain.Treatment) {
+            val total = treatment.priceCents
+            if (total == null) {
+                tvTreatmentPrice.setText(R.string.appointments_price_unconfigured)
+                depositOptions.visibility = View.GONE
+                tvDepositSummary.visibility = View.GONE
+                return
+            }
+            tvTreatmentPrice.text = getString(
+                R.string.appointments_price_total,
+                MoneyFormats.usd(total)
+            )
+            depositOptions.visibility = View.VISIBLE
+            tvDepositSummary.visibility = View.VISIBLE
+            val deposit = MoneyFormats.percentageOf(total, selectedDepositPercent)
+            tvDepositSummary.text = getString(
+                R.string.appointments_deposit_summary,
+                MoneyFormats.usd(deposit),
+                MoneyFormats.usd(total - deposit)
+            )
+        }
 
         fun resetTime() {
             selectedStartAt = null
@@ -174,12 +209,13 @@ class AppointmentsActivity : BaseActivity() {
             ArrayAdapter(
                 this,
                 android.R.layout.simple_list_item_1,
-                treatments.map { it.name }
+                treatments.map(::treatmentOptionLabel)
             )
         )
         actTreatment.setOnItemClickListener { _, _, position, _ ->
             val treatment = treatments[position]
             selectedTreatmentId = treatment.id
+            renderPriceBreakdown(treatment)
             tvTreatmentDuration.text = getString(
                 R.string.appointments_duration,
                 treatment.durationMinutes
@@ -189,6 +225,12 @@ class AppointmentsActivity : BaseActivity() {
             requestAvailability()
         }
         actTreatment.setOnClickListener { actTreatment.showDropDown() }
+
+        depositOptions.check(R.id.rbDepositQuarter)
+        depositOptions.setOnCheckedChangeListener { _, checkedId ->
+            selectedDepositPercent = if (checkedId == R.id.rbDepositHalf) 50 else 25
+            treatments.firstOrNull { it.id == selectedTreatmentId }?.let(::renderPriceBreakdown)
+        }
 
         btnPickDate.setOnClickListener {
             val current = selectedDayStart ?: System.currentTimeMillis()
@@ -239,7 +281,8 @@ class AppointmentsActivity : BaseActivity() {
                     }?.id
                 val typedTreatment = actTreatment.text?.toString()?.trim().orEmpty()
                 val treatmentId = selectedTreatmentId
-                    ?: treatments.firstOrNull { it.name == typedTreatment }?.id
+                    ?: treatments.firstOrNull { treatmentOptionLabel(it) == typedTreatment }?.id
+                val selectedTreatment = treatments.firstOrNull { it.id == treatmentId }
                 val startAt = selectedStartAt
 
                 when {
@@ -255,9 +298,17 @@ class AppointmentsActivity : BaseActivity() {
                     treatmentId == null -> {
                         toastShort(R.string.appointments_error_treatment)
                     }
+                    selectedTreatment?.priceCents == null -> {
+                        toastLong(getString(R.string.appointments_deposit_missing))
+                    }
                     else -> {
                         dialog.dismiss()
-                        viewModel.createAppointment(treatmentId, startAt, dentistId)
+                        viewModel.createAppointment(
+                            treatmentId,
+                            startAt,
+                            dentistId,
+                            selectedDepositPercent
+                        )
                     }
                 }
             }

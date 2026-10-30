@@ -59,9 +59,13 @@ class MenuViewModel(
 
         roleJob?.cancel()
         roleJob = viewModelScope.launch {
-            val role = userRepository.getProfile(user.uid).getOrNull()?.role
-                ?: UserRole.PATIENT
-            _uiState.update { it.copy(role = role) }
+            val profile = userRepository.getProfile(user.uid).getOrNull()
+            _uiState.update {
+                it.copy(
+                    role = profile?.role ?: UserRole.PATIENT,
+                    profilePhotoBase64 = profile?.profilePhotoBase64
+                )
+            }
         }
     }
 

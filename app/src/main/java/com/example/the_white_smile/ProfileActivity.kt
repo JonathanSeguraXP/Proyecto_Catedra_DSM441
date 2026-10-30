@@ -130,7 +130,7 @@ class ProfileActivity : BaseActivity() {
         if (!state.specialty.isNullOrBlank()) {
             tvProfileSpecialty.text = getString(R.string.profile_specialty, state.specialty)
         }
-        btnChangeProfilePhoto.visibility = if (state.isDentist) View.VISIBLE else View.GONE
+        btnChangeProfilePhoto.visibility = View.VISIBLE
         btnChangeProfilePhoto.setText(
             if (state.profilePhotoBase64.isNullOrBlank()) {
                 R.string.profile_btn_add_photo

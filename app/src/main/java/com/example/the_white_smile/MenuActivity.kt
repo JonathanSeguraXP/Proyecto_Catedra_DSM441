@@ -19,6 +19,7 @@ import com.example.the_white_smile.domain.UserRole
 import com.example.the_white_smile.ui.menu.MenuEvent
 import com.example.the_white_smile.ui.menu.MenuUiState
 import com.example.the_white_smile.ui.menu.MenuViewModel
+import com.example.the_white_smile.util.ProfilePhotoCodec
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
@@ -33,8 +34,10 @@ class MenuActivity : BaseActivity() {
 
     private lateinit var tvGreeting: TextView
     private lateinit var tvMenuDescription: TextView
+    private lateinit var ivMenuLogo: ImageView
     private lateinit var grid: GridLayout
     private var renderedRole: UserRole? = null
+    private var renderedPhoto: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +67,7 @@ class MenuActivity : BaseActivity() {
     private fun bindViews() {
         tvGreeting = findViewById(R.id.tvGreeting)
         tvMenuDescription = findViewById(R.id.tvMenuDescription)
+        ivMenuLogo = findViewById(R.id.ivMenuLogo)
         grid = findViewById(R.id.gridMenu)
     }
 
@@ -102,6 +106,13 @@ class MenuActivity : BaseActivity() {
         tvGreeting.text = state.displayName
             ?.let { getString(R.string.menu_greeting, it) }
             ?: getString(R.string.menu_welcome)
+
+        if (renderedPhoto != state.profilePhotoBase64) {
+            renderedPhoto = state.profilePhotoBase64
+            val bitmap = ProfilePhotoCodec.decode(state.profilePhotoBase64)
+            if (bitmap == null) ivMenuLogo.setImageResource(R.mipmap.ic_launcher)
+            else ivMenuLogo.setImageBitmap(bitmap)
+        }
 
         val role = state.role ?: return
         tvMenuDescription.setText(
@@ -203,6 +214,11 @@ class MenuActivity : BaseActivity() {
             )
         )
         UserRole.ADMIN -> listOf(
+            MenuOption(
+                R.string.menu_option_prices,
+                android.R.drawable.ic_menu_edit,
+                TreatmentPricesActivity::class.java
+            ),
             MenuOption(
                 R.string.menu_option_dentists,
                 android.R.drawable.ic_menu_manage,

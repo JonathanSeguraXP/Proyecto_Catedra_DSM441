@@ -150,7 +150,7 @@ implementación de datos sin modificar la interfaz de usuario.
   correo y la aplicación de mapas mediante Intents implícitos.
 - Aviso al usuario si el dispositivo no tiene una aplicación compatible, sin cerrar
   la pantalla.
-- Los datos de contacto son de ejemplo y se editan en `res/values/strings.xml`.
+- El teléfono y WhatsApp del consultorio se configuran en `res/values/strings.xml`.
 
 ### Tratamientos
 
@@ -364,8 +364,15 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    puede leerlas y marcar su estado como `COMPLETED`. Los dentistas son visibles para
    todos los usuarios autenticados; solo el administrador puede modificar sus datos de
    trabajo y cada dentista puede actualizar únicamente `profilePhotoBase64`.
-   Las fotos de perfil se guardan como miniaturas JPEG comprimidas en el documento del
-   dentista en Firestore; no requieren Cloud Storage.
+   Las fotos de perfil de pacientes y dentistas se guardan como miniaturas JPEG
+   comprimidas en Firestore; no requieren Cloud Storage. Los precios se guardan en
+   `treatmentPrices/{treatmentId}` y solo el administrador puede modificarlos.
+   El catálogo incluye precios referenciales desde, basados en tarifas publicadas en
+   El Salvador; administración puede ajustarlos desde el panel. El costo final de los
+   tratamientos variables se confirma tras la evaluación clínica. Al reservar, el
+   paciente elige un abono estimado de 25% o 50%; la app lo registra como pendiente de
+   pago en clínica, no procesa ni confirma pagos. El teléfono y WhatsApp se editan en
+   `res/values/strings.xml`.
    Los bloques ocupados de la agenda (`dentists/{id}/slots`) se leen con sesión
    iniciada, pero cada paciente solo puede crear o borrar los suyos. La agenda del
    dentista usa una consulta de grupo de colecciones sobre `appointments`; la regla
@@ -385,7 +392,18 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if request.auth != null &&
         (request.auth.uid == uid || isAdmin());
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin() ||
+        (request.auth != null && request.auth.uid == uid &&
+          request.resource.data.keys().hasOnly(['profilePhotoBase64']) &&
+          request.resource.data.profilePhotoBase64 is string &&
+          request.resource.data.profilePhotoBase64.size() <= 80000);
+      allow update: if isAdmin() ||
+        (request.auth != null && request.auth.uid == uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['profilePhotoBase64']) &&
+          request.resource.data.profilePhotoBase64 is string &&
+          request.resource.data.profilePhotoBase64.size() <= 80000);
+      allow delete: if isAdmin();
     }
 
     match /dentists/{dentistId} {
@@ -408,6 +426,11 @@ service cloud.firestore {
         allow delete: if request.auth != null &&
           resource.data.patientId == request.auth.uid;
       }
+    }
+
+    match /treatmentPrices/{treatmentId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
     }
 
     match /users/{uid}/appointments/{appointmentId} {

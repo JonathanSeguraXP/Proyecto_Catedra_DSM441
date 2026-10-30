@@ -62,6 +62,15 @@
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="?attr/colorSecondary"
                 tools:text="45 min" />
+
+            <TextView
+                android:id="@+id/tvTreatmentPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary"
+                tools:text="$30.00" />
         </LinearLayout>
     </LinearLayout>
 

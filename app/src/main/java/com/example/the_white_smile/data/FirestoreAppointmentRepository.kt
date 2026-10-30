@@ -109,6 +109,30 @@ class FirestoreAppointmentRepository(
         dentistId: String,
         dentistName: String,
         patientName: String?
+    ): Result<Unit> = createAppointment(
+        service = service,
+        startAt = startAt,
+        treatmentId = treatmentId,
+        durationMinutes = durationMinutes,
+        dentistId = dentistId,
+        dentistName = dentistName,
+        patientName = patientName,
+        totalPriceCents = 0L,
+        depositCents = 0L,
+        depositPercent = 0
+    )
+
+    override suspend fun createAppointment(
+        service: String,
+        startAt: Long,
+        treatmentId: String,
+        durationMinutes: Int,
+        dentistId: String,
+        dentistName: String,
+        patientName: String?,
+        totalPriceCents: Long,
+        depositCents: Long,
+        depositPercent: Int
     ): Result<Unit> = runData {
         val uid = requireUid()
         val appointmentRef = appointmentsRef(uid).document()
@@ -145,6 +169,12 @@ class FirestoreAppointmentRepository(
             )
             patientName?.trim()?.takeIf { it.isNotEmpty() }?.let {
                 data[FIELD_PATIENT_NAME] = it
+            }
+            if (totalPriceCents > 0L && depositCents > 0L) {
+                data[FIELD_TOTAL_PRICE_CENTS] = totalPriceCents
+                data[FIELD_DEPOSIT_CENTS] = depositCents
+                data[FIELD_DEPOSIT_PERCENT] = depositPercent
+                data[FIELD_DEPOSIT_STATUS] = DEPOSIT_PENDING
             }
             transaction.set(appointmentRef, data)
         }.awaitResult()
@@ -230,7 +260,13 @@ class FirestoreAppointmentRepository(
             durationMinutes = getLong(FIELD_DURATION_MINUTES)?.toInt()
                 ?: Appointment.DEFAULT_DURATION_MINUTES,
             patientId = getString(FIELD_PATIENT_ID),
-            patientName = getString(FIELD_PATIENT_NAME)
+            patientName = getString(FIELD_PATIENT_NAME),
+            totalPriceCents = getLong(FIELD_TOTAL_PRICE_CENTS),
+            depositCents = getLong(FIELD_DEPOSIT_CENTS),
+            depositPercent = getLong(FIELD_DEPOSIT_PERCENT)?.toInt(),
+            depositStatus = com.example.the_white_smile.domain.DepositStatus.from(
+                getString(FIELD_DEPOSIT_STATUS)
+            )
         )
     }
 
@@ -258,6 +294,11 @@ class FirestoreAppointmentRepository(
         const val FIELD_APPOINTMENT_ID = "appointmentId"
         const val FIELD_PATIENT_ID = "patientId"
         const val FIELD_PATIENT_NAME = "patientName"
+        const val FIELD_TOTAL_PRICE_CENTS = "totalPriceCents"
+        const val FIELD_DEPOSIT_CENTS = "depositCents"
+        const val FIELD_DEPOSIT_PERCENT = "depositPercent"
+        const val FIELD_DEPOSIT_STATUS = "depositStatus"
+        const val DEPOSIT_PENDING = "PENDING"
         const val FIELD_CREATED_AT = "createdAt"
     }
 }

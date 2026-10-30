@@ -10,4 +10,8 @@ interface UserRepository {
      * Los pacientes se reconocen por defecto y no requieren registro extra.
      */
     suspend fun getProfile(uid: String): Result<UserProfile?>
+
+    /** Guarda la miniatura del perfil propio; la implementacion puede crear el perfil paciente. */
+    suspend fun updateProfilePhoto(uid: String, photoBase64: String): Result<Unit> =
+        Result.failure(UnsupportedOperationException("No se puede actualizar la foto"))
 }

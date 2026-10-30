@@ -66,6 +66,48 @@
             android:visibility="gone"
             tools:text="Duración: 30 min" />
 
+        <TextView
+            android:id="@+id/tvTreatmentPrice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="Precio total: $30.00" />
+
+        <RadioGroup
+            android:id="@+id/rgDepositOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <RadioButton
+                android:id="@+id/rbDepositQuarter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/appointments_deposit_quarter" />
+
+            <RadioButton
+                android:id="@+id/rbDepositHalf"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/appointments_deposit_half" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/tvDepositSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            tools:text="Abono pendiente en clínica: $7.50 · Restante: $22.50" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPickDate"
             style="@style/Widget.Material3.Button.OutlinedButton"

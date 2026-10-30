@@ -12,6 +12,7 @@ import com.example.the_white_smile.R
 import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AppointmentStatus
 import com.example.the_white_smile.util.DateFormats
+import com.example.the_white_smile.util.MoneyFormats
 import com.google.android.material.button.MaterialButton
 
 /** Adaptador de la lista de citas. */
@@ -34,6 +35,8 @@ class AppointmentAdapter(
         private val tvService: TextView = itemView.findViewById(R.id.tvAppointmentService)
         private val tvDateTime: TextView = itemView.findViewById(R.id.tvAppointmentDateTime)
         private val tvDentist: TextView = itemView.findViewById(R.id.tvAppointmentDentist)
+        private val tvPrice: TextView = itemView.findViewById(R.id.tvAppointmentPrice)
+        private val tvDeposit: TextView = itemView.findViewById(R.id.tvAppointmentDeposit)
         private val tvStatus: TextView = itemView.findViewById(R.id.tvAppointmentStatus)
         private val btnCancel: MaterialButton = itemView.findViewById(R.id.btnCancelAppointment)
 
@@ -46,6 +49,22 @@ class AppointmentAdapter(
             val dentistName = appointment.dentistName?.trim().orEmpty()
             tvDentist.visibility = if (dentistName.isEmpty()) View.GONE else View.VISIBLE
             tvDentist.text = context.getString(R.string.appointments_dentist_label, dentistName)
+
+            tvPrice.visibility = if (appointment.totalPriceCents == null) View.GONE else View.VISIBLE
+            if (appointment.totalPriceCents != null) {
+                tvPrice.text = context.getString(
+                    R.string.treatments_price_label,
+                    MoneyFormats.usd(appointment.totalPriceCents)
+                )
+            }
+            tvDeposit.visibility = if (appointment.depositCents == null) View.GONE else View.VISIBLE
+            if (appointment.depositCents != null && appointment.totalPriceCents != null) {
+                tvDeposit.text = context.getString(
+                    R.string.appointments_deposit_pending,
+                    MoneyFormats.usd(appointment.depositCents),
+                    MoneyFormats.usd(appointment.totalPriceCents)
+                )
+            }
 
             tvStatus.setText(
                 when (appointment.status) {

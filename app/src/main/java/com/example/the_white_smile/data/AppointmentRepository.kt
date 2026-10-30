@@ -45,6 +45,28 @@ interface AppointmentRepository {
         patientName: String? = null
     ): Result<Unit>
 
+    /** Reserva la cita y guarda el precio total y el abono acordado. */
+    suspend fun createAppointment(
+        service: String,
+        startAt: Long,
+        treatmentId: String,
+        durationMinutes: Int,
+        dentistId: String,
+        dentistName: String,
+        patientName: String?,
+        totalPriceCents: Long,
+        depositCents: Long,
+        depositPercent: Int
+    ): Result<Unit> = createAppointment(
+        service = service,
+        startAt = startAt,
+        treatmentId = treatmentId,
+        durationMinutes = durationMinutes,
+        dentistId = dentistId,
+        dentistName = dentistName,
+        patientName = patientName
+    )
+
     /** Cancela la cita y libera sus bloques de la agenda del dentista. */
     suspend fun cancelAppointment(appointment: Appointment): Result<Unit>
 
