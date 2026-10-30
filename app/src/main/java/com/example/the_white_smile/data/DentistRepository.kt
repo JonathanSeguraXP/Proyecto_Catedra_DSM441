@@ -18,9 +18,20 @@ interface DentistRepository {
         displayName: String,
         email: String,
         password: String,
-        specialty: String
+        specialty: String,
+        workDays: Set<Int> = Dentist.DEFAULT_WORK_DAYS,
+        startMinute: Int = Dentist.DEFAULT_START_MINUTE,
+        endMinute: Int = Dentist.DEFAULT_END_MINUTE
     ): Result<Dentist>
 
     /** Activa o desactiva un dentista sin eliminarlo. */
     suspend fun setActive(dentistId: String, active: Boolean): Result<Unit>
+
+    /** Actualiza los dias y el rango de atencion del dentista. */
+    suspend fun updateSchedule(
+        dentistId: String,
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
+    ): Result<Unit>
 }

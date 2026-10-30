@@ -132,17 +132,28 @@ class FakeAppointmentRepository : AppointmentRepository {
 
     val appointments = MutableStateFlow<List<Appointment>>(emptyList())
 
+    val busySlots = MutableStateFlow<Set<Long>>(emptySet())
+
     var observeError: Throwable? = null
+    var busyError: Throwable? = null
+
+    var busyCalls = 0
+    var lastBusyDentistId: String? = null
+    var lastBusyDayStart: Long? = null
+    var lastBusyDayEnd: Long? = null
 
     var createCalls = 0
     var lastService: String? = null
     var lastStartAt: Long? = null
+    var lastTreatmentId: String? = null
+    var lastDurationMinutes: Int? = null
     var lastDentistId: String? = null
     var lastDentistName: String? = null
     var createResult: Result<Unit> = Result.success(Unit)
 
     var cancelCalls = 0
     var lastCancelledId: String? = null
+    var lastCancelledAppointment: Appointment? = null
     var cancelResult: Result<Unit> = Result.success(Unit)
 
     override fun observeAppointments(): Flow<List<Appointment>> {
@@ -150,23 +161,41 @@ class FakeAppointmentRepository : AppointmentRepository {
         return if (error != null) flow { throw error } else appointments.asStateFlow()
     }
 
+    override fun observeBusySlots(
+        dentistId: String,
+        dayStartAt: Long,
+        dayEndAt: Long
+    ): Flow<Set<Long>> {
+        busyCalls++
+        lastBusyDentistId = dentistId
+        lastBusyDayStart = dayStartAt
+        lastBusyDayEnd = dayEndAt
+        val error = busyError
+        return if (error != null) flow { throw error } else busySlots.asStateFlow()
+    }
+
     override suspend fun createAppointment(
         service: String,
         startAt: Long,
+        treatmentId: String,
+        durationMinutes: Int,
         dentistId: String,
         dentistName: String
     ): Result<Unit> {
         createCalls++
         lastService = service
         lastStartAt = startAt
+        lastTreatmentId = treatmentId
+        lastDurationMinutes = durationMinutes
         lastDentistId = dentistId
         lastDentistName = dentistName
         return createResult
     }
 
-    override suspend fun cancelAppointment(id: String): Result<Unit> {
+    override suspend fun cancelAppointment(appointment: Appointment): Result<Unit> {
         cancelCalls++
-        lastCancelledId = id
+        lastCancelledId = appointment.id
+        lastCancelledAppointment = appointment
         return cancelResult
     }
 }
@@ -211,12 +240,22 @@ class FakeDentistRepository : DentistRepository {
     var lastEmail: String? = null
     var lastPassword: String? = null
     var lastSpecialty: String? = null
+    var lastWorkDays: Set<Int>? = null
+    var lastStartMinute: Int? = null
+    var lastEndMinute: Int? = null
     var createResult: Result<Dentist>? = null
 
     var setActiveCalls = 0
     var lastActiveId: String? = null
     var lastActiveValue: Boolean? = null
     var setActiveResult: Result<Unit> = Result.success(Unit)
+
+    var updateScheduleCalls = 0
+    var lastScheduleId: String? = null
+    var lastScheduleWorkDays: Set<Int>? = null
+    var lastScheduleStartMinute: Int? = null
+    var lastScheduleEndMinute: Int? = null
+    var updateScheduleResult: Result<Unit> = Result.success(Unit)
 
     override fun observeDentists(): Flow<List<Dentist>> {
         val error = observeError
@@ -227,13 +266,19 @@ class FakeDentistRepository : DentistRepository {
         displayName: String,
         email: String,
         password: String,
-        specialty: String
+        specialty: String,
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
     ): Result<Dentist> {
         createCalls++
         lastName = displayName
         lastEmail = email
         lastPassword = password
         lastSpecialty = specialty
+        lastWorkDays = workDays
+        lastStartMinute = startMinute
+        lastEndMinute = endMinute
 
         createResult?.let { return it }
 
@@ -241,7 +286,10 @@ class FakeDentistRepository : DentistRepository {
             id = "dentist-$createCalls",
             displayName = displayName,
             email = email,
-            specialty = specialty
+            specialty = specialty,
+            workDays = workDays,
+            startMinute = startMinute,
+            endMinute = endMinute
         )
         dentists.value = dentists.value + dentist
         return Result.success(dentist)
@@ -259,5 +307,34 @@ class FakeDentistRepository : DentistRepository {
                 }
             }
         return setActiveResult
+    }
+
+    override suspend fun updateSchedule(
+        dentistId: String,
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
+    ): Result<Unit> {
+        updateScheduleCalls++
+        lastScheduleId = dentistId
+        lastScheduleWorkDays = workDays
+        lastScheduleStartMinute = startMinute
+        lastScheduleEndMinute = endMinute
+
+        updateScheduleResult
+            .onSuccess {
+                dentists.value = dentists.value.map {
+                    if (it.id == dentistId) {
+                        it.copy(
+                            workDays = workDays,
+                            startMinute = startMinute,
+                            endMinute = endMinute
+                        )
+                    } else {
+                        it
+                    }
+                }
+            }
+        return updateScheduleResult
     }
 }

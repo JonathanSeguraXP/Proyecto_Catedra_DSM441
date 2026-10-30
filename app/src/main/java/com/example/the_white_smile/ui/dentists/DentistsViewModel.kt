@@ -13,6 +13,7 @@ import com.example.the_white_smile.data.AndroidConnectivityChecker
 import com.example.the_white_smile.data.AndroidEmailValidator
 import com.example.the_white_smile.data.AuthRepository
 import com.example.the_white_smile.data.DentistRepository
+import com.example.the_white_smile.domain.AppointmentSchedule
 import com.example.the_white_smile.domain.ConnectivityChecker
 import com.example.the_white_smile.domain.Dentist
 import com.example.the_white_smile.domain.EmailValidator
@@ -55,13 +56,17 @@ class DentistsViewModel(
         displayName: String,
         specialty: String,
         email: String,
-        password: String
+        password: String,
+        workDays: Set<Int> = Dentist.DEFAULT_WORK_DAYS,
+        startMinute: Int = Dentist.DEFAULT_START_MINUTE,
+        endMinute: Int = Dentist.DEFAULT_END_MINUTE
     ) {
         if (_uiState.value.isCreating) return
 
         val cleanName = displayName.trim()
         val cleanSpecialty = specialty.trim()
         val cleanEmail = email.trim()
+        val scheduleError = scheduleError(workDays, startMinute, endMinute)
 
         when {
             cleanName.isEmpty() -> {
@@ -80,6 +85,10 @@ class DentistsViewModel(
                 notify(R.string.dentists_error_password)
                 return
             }
+            scheduleError != null -> {
+                notify(scheduleError)
+                return
+            }
             !isOnline() -> return
         }
 
@@ -90,9 +99,55 @@ class DentistsViewModel(
                     displayName = cleanName,
                     email = cleanEmail,
                     password = password,
-                    specialty = cleanSpecialty
+                    specialty = cleanSpecialty,
+                    workDays = workDays,
+                    startMinute = startMinute,
+                    endMinute = endMinute
                 )
                     .onSuccess { _events.emit(DentistsEvent.Created(it.displayName)) }
+                    .onFailure { _events.emit(DentistsEvent.Error(it)) }
+            } finally {
+                _uiState.update { it.copy(isCreating = false) }
+            }
+        }
+    }
+
+    /** Actualiza los dias y el rango de atencion de un dentista existente. */
+    fun updateSchedule(
+        dentist: Dentist,
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
+    ) {
+        if (_uiState.value.isCreating) return
+
+        val scheduleError = scheduleError(workDays, startMinute, endMinute)
+        when {
+            scheduleError != null -> {
+                notify(scheduleError)
+                return
+            }
+            dentist.workDays == workDays &&
+                dentist.startMinute == startMinute &&
+                dentist.endMinute == endMinute -> {
+                notify(R.string.dentists_schedule_unchanged)
+                return
+            }
+            !isOnline() -> return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCreating = true) }
+            try {
+                repository.updateSchedule(
+                    dentistId = dentist.id,
+                    workDays = workDays,
+                    startMinute = startMinute,
+                    endMinute = endMinute
+                )
+                    .onSuccess {
+                        _events.emit(DentistsEvent.ScheduleUpdated(dentist.displayName))
+                    }
                     .onFailure { _events.emit(DentistsEvent.Error(it)) }
             } finally {
                 _uiState.update { it.copy(isCreating = false) }
@@ -136,12 +191,30 @@ class DentistsViewModel(
         return false
     }
 
+    /** Devuelve el mensaje de error del horario, o null si es valido. */
+    @StringRes
+    private fun scheduleError(
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
+    ): Int? = when {
+        workDays.isEmpty() -> R.string.dentists_error_work_days
+        startMinute % AppointmentSchedule.SLOT_MINUTES != 0 ||
+            endMinute % AppointmentSchedule.SLOT_MINUTES != 0 ->
+            R.string.dentists_error_schedule_alignment
+        startMinute < 0 || endMinute > MINUTES_PER_DAY ||
+            endMinute - startMinute < AppointmentSchedule.SLOT_MINUTES ->
+            R.string.dentists_error_schedule_range
+        else -> null
+    }
+
     private fun notify(@StringRes messageRes: Int) {
         _events.tryEmit(DentistsEvent.Message(messageRes))
     }
 
     companion object {
         private const val MIN_PASSWORD_LENGTH = 6
+        private const val MINUTES_PER_DAY = 24 * 60
 
         fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
             initializer {
