@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -17,7 +16,7 @@ import kotlinx.coroutines.launch
  * Pantalla de detalle de un tratamiento.
  * El tratamiento se busca por su identificador en [TreatmentDetailViewModel].
  */
-class TreatmentDetailActivity : AppCompatActivity() {
+class TreatmentDetailActivity : BaseActivity() {
 
     private val treatmentId: String by lazy {
         intent.getStringExtra(EXTRA_TREATMENT_ID).orEmpty()

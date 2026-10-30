@@ -6,7 +6,6 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -25,7 +24,7 @@ import kotlinx.coroutines.launch
  * Pantalla de perfil.
  * Solo administra la vista: los datos y las actualizaciones los maneja [ProfileViewModel].
  */
-class ProfileActivity : AppCompatActivity() {
+class ProfileActivity : BaseActivity() {
 
     private val viewModel: ProfileViewModel by viewModels { ProfileViewModel.factory(this) }
 

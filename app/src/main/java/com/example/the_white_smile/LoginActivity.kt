@@ -6,7 +6,6 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -30,7 +29,7 @@ import kotlinx.coroutines.launch
  * Pantalla de login.
  * Solo se encarga de la vista: delega validaciones y llamadas a [LoginViewModel].
  */
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : BaseActivity() {
 
     private val viewModel: LoginViewModel by viewModels { LoginViewModel.factory(this) }
 

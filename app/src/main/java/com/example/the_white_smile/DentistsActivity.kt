@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -36,7 +35,7 @@ import java.util.Calendar
  * Solo administra la vista: las cuentas y los estados los maneja
  * [DentistsViewModel].
  */
-class DentistsActivity : AppCompatActivity() {
+class DentistsActivity : BaseActivity() {
 
     private val viewModel: DentistsViewModel by viewModels {
         DentistsViewModel.factory(this)

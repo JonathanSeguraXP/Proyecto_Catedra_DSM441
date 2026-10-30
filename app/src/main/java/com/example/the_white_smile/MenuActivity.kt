@@ -12,7 +12,6 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -28,7 +27,7 @@ import kotlinx.coroutines.launch
  * Pantalla del menu principal.
  * Solo administra la vista: la sesion y el cierre los maneja [MenuViewModel].
  */
-class MenuActivity : AppCompatActivity() {
+class MenuActivity : BaseActivity() {
 
     private val viewModel: MenuViewModel by viewModels { MenuViewModel.factory() }
 

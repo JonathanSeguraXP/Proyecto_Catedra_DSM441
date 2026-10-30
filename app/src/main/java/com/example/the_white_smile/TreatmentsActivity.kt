@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -21,7 +20,7 @@ import kotlinx.coroutines.launch
  * Pantalla con el catalogo de tratamientos.
  * Solo administra la vista: el catalogo lo entrega [TreatmentsViewModel].
  */
-class TreatmentsActivity : AppCompatActivity() {
+class TreatmentsActivity : BaseActivity() {
 
     private val viewModel: TreatmentsViewModel by viewModels {
         TreatmentsViewModel.factory()

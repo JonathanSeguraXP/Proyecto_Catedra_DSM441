@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -24,7 +23,7 @@ import kotlinx.coroutines.launch
  * Solo administra la vista: el filtrado y el orden los maneja
  * [HistoryViewModel], y cada elemento se muestra con el adaptador de citas.
  */
-class HistoryActivity : AppCompatActivity() {
+class HistoryActivity : BaseActivity() {
 
     private val viewModel: HistoryViewModel by viewModels {
         HistoryViewModel.factory()

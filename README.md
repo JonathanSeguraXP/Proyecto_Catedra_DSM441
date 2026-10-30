@@ -170,6 +170,14 @@ implementación de datos sin modificar la interfaz de usuario.
 - Catálogo local en `FaqCatalog`, de modo que se pueden agregar preguntas sin cambiar
   la lógica de la pantalla.
 
+### Barras del sistema
+
+- Todas las pantallas heredan de `BaseActivity`, que reserva el espacio de la
+  barra de estado, la cámara, la barra de navegación y el teclado mediante
+  `WindowInsetsCompat`, de modo que el contenido nunca quede tapado.
+- El tema ajusta el color de los iconos de las barras (`windowLightStatusBar` y
+  `windowLightNavigationBar`): oscuros en modo claro y claros en modo oscuro.
+
 ## Tecnologías utilizadas
 
 | Tecnología | Uso |
@@ -217,6 +225,7 @@ app/src/main/java/com/example/the_white_smile/
   TreatmentDetailActivity.kt     # Vista del detalle de un tratamiento
   HelpActivity.kt                # Vista de ayuda con preguntas frecuentes
   DentistsActivity.kt            # Vista de dentistas del administrador
+  BaseActivity.kt                # Margenes del sistema y del teclado en todas las vistas
   core/
     ServiceLocator.kt            # Inyección de dependencias manual
     TaskExtensions.kt            # Adaptación de Task de Firebase a corrutinas

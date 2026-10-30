@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.example.the_white_smile.util.ContactLinks
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -15,7 +14,7 @@ import com.google.android.material.button.MaterialButton
  * La informacion es fija, por lo que no requiere ViewModel: la Activity
  * pinta los datos y abre las aplicaciones externas correspondientes.
  */
-class ContactActivity : AppCompatActivity() {
+class ContactActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

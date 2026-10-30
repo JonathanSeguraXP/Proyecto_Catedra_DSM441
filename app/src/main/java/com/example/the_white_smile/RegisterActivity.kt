@@ -5,7 +5,6 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -22,7 +21,7 @@ import kotlinx.coroutines.launch
  * Pantalla de registro.
  * Solo se encarga de la vista: delega validaciones y llamadas a [RegisterViewModel].
  */
-class RegisterActivity : AppCompatActivity() {
+class RegisterActivity : BaseActivity() {
 
     private val viewModel: RegisterViewModel by viewModels { RegisterViewModel.factory(this) }
 

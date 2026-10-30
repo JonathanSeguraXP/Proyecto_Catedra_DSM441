@@ -10,7 +10,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -38,7 +37,7 @@ import java.util.Calendar
  * Solo administra la vista: los turnos y las operaciones los maneja
  * [AppointmentsViewModel].
  */
-class AppointmentsActivity : AppCompatActivity() {
+class AppointmentsActivity : BaseActivity() {
 
     private val viewModel: AppointmentsViewModel by viewModels {
         AppointmentsViewModel.factory(this)

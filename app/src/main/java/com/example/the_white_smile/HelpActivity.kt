@@ -3,7 +3,6 @@ package com.example.the_white_smile
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -20,7 +19,7 @@ import kotlinx.coroutines.launch
  * Solo administra la vista: las preguntas y la respuesta abierta las
  * maneja [HelpViewModel].
  */
-class HelpActivity : AppCompatActivity() {
+class HelpActivity : BaseActivity() {
 
     private val viewModel: HelpViewModel by viewModels {
         HelpViewModel.factory()
