@@ -178,6 +178,11 @@ class MenuActivity : AppCompatActivity() {
         )
         UserRole.DENTIST -> listOf(
             MenuOption(
+                R.string.menu_option_agenda,
+                android.R.drawable.ic_menu_my_calendar,
+                DentistAgendaActivity::class.java
+            ),
+            MenuOption(
                 R.string.menu_option_treatments,
                 android.R.drawable.ic_menu_agenda,
                 TreatmentsActivity::class.java

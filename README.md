@@ -10,7 +10,9 @@ historial de citas pasadas y canceladas, un catálogo de tratamientos con su det
 una pantalla de contacto con accesos directos a las aplicaciones del dispositivo,
 una sección de ayuda con preguntas frecuentes y un menú que se adapta al rol del
 usuario (paciente, dentista o administrador). El administrador puede crear las cuentas
-de los dentistas desde la aplicación, sin cerrar su propia sesión.
+de los dentistas desde la aplicación, sin cerrar su propia sesión, y cada dentista
+puede consultar su agenda de citas y marcarlas como completadas cuando ya fueron
+atendidas.
 
 ## Descripción general
 
@@ -41,8 +43,9 @@ implementación de datos sin modificar la interfaz de usuario.
 - Acceso restringido a usuarios con una sesión activa; en caso contrario se redirige
   al inicio de sesión.
 - Saludo personalizado con el nombre del usuario autenticado.
-- Logotipo de la aplicación y grilla de opciones (turnos, tratamientos, perfil,
-  historial, contacto y ayuda). Todas las opciones abren su pantalla correspondiente.
+- Logotipo de la aplicación y grilla de opciones que cambia según el rol (agenda,
+  citas, tratamientos, perfil, historial, contacto, ayuda y dentistas). Todas las
+  opciones abren su pantalla correspondiente.
 - Confirmación antes de salir de la aplicación.
 
 ### Roles de usuario
@@ -52,8 +55,7 @@ implementación de datos sin modificar la interfaz de usuario.
   `role`. Los pacientes no requieren documento: si no existe, se asumen `PATIENT`.
 - El menú se construye según el rol:
   - **Paciente:** Citas, Tratamientos, Perfil, Historial, Contacto y Ayuda.
-  - **Dentista:** Tratamientos, Perfil, Contacto y Ayuda. En las siguientes etapas
-    se agregará su agenda.
+  - **Dentista:** Agenda, Tratamientos, Perfil, Contacto y Ayuda.
   - **Administrador:** Tratamientos, Perfil, Contacto, Ayuda y Dentistas.
 - Si la lectura del perfil falla, la aplicación continúa como paciente en lugar de
   bloquear el acceso.
@@ -103,12 +105,32 @@ implementación de datos sin modificar la interfaz de usuario.
   pendiente del mismo usuario.
 - La cita guarda el identificador y el nombre del dentista, el tratamiento y su
   duración, de modo que la información se conserva aunque el catálogo cambie.
+- También guarda el identificador y el nombre del paciente que la agendó, para que
+  el dentista pueda reconocerla en su agenda.
 - Cancelación de citas pendientes con confirmación previa; el registro se conserva con
   estado `CANCELLED` y se liberan sus bloques de la agenda del dentista.
 - Estados de la cita: pendiente, cancelada y completada.
 - Persistencia en Cloud Firestore, bajo `users/{uid}/appointments`, de modo que cada
   usuario solo accede a sus propios turnos. Los bloques ocupados son visibles para
   todos los usuarios autenticados, pero no exponen la cita completa de otros pacientes.
+
+### Agenda del dentista
+
+- Pantalla exclusiva del rol `DENTIST`, accesible desde la opción Agenda del menú.
+- Listado en tiempo real de las citas asignadas al dentista, con el nombre del paciente,
+  el tratamiento, la fecha y hora, la duración y el estado.
+- Las citas se consultan con una consulta de grupo de colecciones
+  (`collectionGroup("appointments")`) filtrada por `dentistId`, y se ordenan por fecha
+  en el cliente para no requerir un índice compuesto. Firestore sí necesita un índice
+  de un solo campo con ámbito de grupo de colecciones para `appointments.dentistId`
+  (ver configuración).
+- El dentista puede marcar como completada una cita pendiente cuya hora ya pasó. La
+  acción pide confirmación y solo actualiza el campo `status` de la cita.
+- Las citas futuras no muestran el botón de completar y el ViewModel vuelve a validar
+  la fecha antes de llamar a Firestore.
+- Las citas creadas antes de esta versión no tienen `patientId`, por lo que no se pueden
+  completar desde la agenda; se muestran con el paciente sin identificar.
+- Estado vacío, indicador de carga y traducción de los errores de Cloud Firestore.
 
 ### Historial
 
@@ -189,6 +211,7 @@ app/src/main/java/com/example/the_white_smile/
   ProfileActivity.kt             # Vista del perfil de usuario
   AppointmentsActivity.kt        # Vista de las citas
   HistoryActivity.kt             # Vista del historial de citas
+  DentistAgendaActivity.kt       # Vista de la agenda del dentista
   ContactActivity.kt             # Vista de contacto
   TreatmentsActivity.kt          # Vista del catálogo de tratamientos
   TreatmentDetailActivity.kt     # Vista del detalle de un tratamiento
@@ -231,6 +254,7 @@ app/src/main/java/com/example/the_white_smile/
     menu/                        # MenuViewModel, estado y eventos
     profile/                     # ProfileViewModel, estado y eventos
     appointments/                # AppointmentsViewModel, disponibilidad y adaptador
+    agenda/                      # DentistAgendaViewModel, estado y adaptador
     history/                     # HistoryViewModel, estado y eventos
     treatments/                  # TreatmentsViewModel, detalle y adaptador
     help/                        # HelpViewModel, catálogo y adaptador
@@ -259,6 +283,8 @@ app/src/test/java/com/example/the_white_smile/
     AppointmentScheduleTest.kt   # Pruebas de bloques y horarios
   ui/history/
     HistoryViewModelTest.kt      # Pruebas del historial de citas
+  ui/agenda/
+    DentistAgendaViewModelTest.kt # Pruebas de la agenda del dentista
   ui/treatments/
     TreatmentsViewModelTest.kt   # Pruebas del catálogo y del detalle
   ui/help/
@@ -277,6 +303,8 @@ app/src/main/res/
     activity_appointments.xml    # Diseño de la lista de citas
     item_appointment.xml         # Elemento de la lista de citas
     activity_history.xml         # Diseño del historial de citas
+    activity_dentist_agenda.xml  # Diseño de la agenda del dentista
+    item_dentist_appointment.xml # Cita con paciente y acción de completar
     dialog_new_appointment.xml   # Diálogo de nueva cita
     activity_contact.xml         # Diseño de la pantalla de contacto
     activity_treatments.xml      # Diseño del catálogo de tratamientos
@@ -321,10 +349,14 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    para que el inicio de sesión con Google funcione correctamente.
 6. En Firestore Database, crear la base de datos y publicar las reglas. Cada usuario
    puede leer su propio perfil; solo el administrador puede modificarlo. Las citas
-   siguen limitadas al usuario dueño del documento. Los dentistas son visibles para
+   siguen limitadas al usuario dueño del documento, pero el dentista asignado también
+   puede leerlas y marcar su estado como `COMPLETED`. Los dentistas son visibles para
    todos los usuarios autenticados, pero solo el administrador puede modificarlos.
    Los bloques ocupados de la agenda (`dentists/{id}/slots`) se leen con sesión
-   iniciada, pero cada paciente solo puede crear o borrar los suyos:
+   iniciada, pero cada paciente solo puede crear o borrar los suyos. La agenda del
+   dentista usa una consulta de grupo de colecciones sobre `appointments`; la regla
+   de esa ruta se aplica a la consulta y el filtro por `dentistId` limita los resultados
+   a las citas del dentista autenticado:
 
 ```
 rules_version = '2';
@@ -357,7 +389,16 @@ service cloud.firestore {
     }
 
     match /users/{uid}/appointments/{appointmentId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // El paciente ve sus citas y el dentista ve las que tiene asignadas.
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid || resource.data.dentistId == request.auth.uid);
+      allow create, delete: if request.auth != null && request.auth.uid == uid;
+      // El dentista solo puede cambiar el estado a COMPLETED.
+      allow update: if request.auth != null &&
+        (request.auth.uid == uid ||
+          (resource.data.dentistId == request.auth.uid &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+            request.resource.data.status == "COMPLETED"));
     }
   }
 }
@@ -375,6 +416,11 @@ service cloud.firestore {
 8. La creación de cuentas de dentistas desde la app usa una instancia secundaria de
    `FirebaseApp`, por lo que no requiere Cloud Functions ni el plan Blaze. Solo debe
    estar habilitado el método de correo electrónico y contraseña.
+9. Crear el índice de grupo de colecciones que usa la agenda del dentista. En
+   Firestore Database, abrir la pestaña Índices y habilitar el ámbito
+   **Grupo de colecciones** para el campo `dentistId` de la colección `appointments`
+   (o abrir el enlace que muestra el error de la consulta la primera vez que se abre
+   la agenda). Sin este índice, la agenda del dentista no puede cargar las citas.
 
 ### 3. Compilar y ejecutar
 
@@ -399,9 +445,12 @@ tratamientos que ocupan varios bloques y descarte de horas ocupadas o ya pasadas
 activos, las validaciones de dentista, tratamiento y fecha, el horario del dentista, el
 solapamiento de citas propias, la creación con el tratamiento y el dentista elegidos,
 el conflicto cuando otro paciente ocupa el bloque, la disponibilidad de horas libres, la
-cancelación y el manejo de errores.
+cancelación, el nombre del paciente que se guarda al agendar y el manejo de errores.
 `HistoryViewModelTest` comprueba el filtrado de
 las citas pasadas y canceladas, el orden descendente, el estado vacío y el manejo de
+errores. `DentistAgendaViewModelTest` verifica la observación y el orden de las citas
+asignadas al dentista, el estado vacío, el completado de citas pasadas, el rechazo de
+citas futuras, ya completadas o sin paciente, la falta de conexión y el manejo de
 errores. `TreatmentsViewModelTest` comprueba el catálogo, la búsqueda por
 identificador y la integridad de los datos locales. `HelpViewModelTest` verifica el
 catálogo de preguntas y el despliegue de una sola respuesta a la vez.
@@ -452,8 +501,15 @@ conexión, Firebase ni emulador.
     de la lista cambie y que las horas de las citas respeten el nuevo rango.
 21. Cerrar sesión e iniciar sesión con la cuenta del dentista recién creada; debe
     entrar al menú del dentista.
-22. Volver a la cuenta de administrador y desactivar al dentista desde el interruptor.
-23. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+22. Abrir la opción Agenda y comprobar que aparezcan las citas asignadas con el nombre
+    del paciente, el tratamiento, la fecha, la duración y el estado.
+23. En una cita pendiente cuya hora ya pasó, tocar Marcar completada, confirmar y
+    verificar que el estado cambie a Completada. En la cuenta del paciente, la cita
+    debe reflejar el cambio.
+24. Comprobar que una cita futura no muestre el botón Marcar completada y que una cita
+    antigua sin paciente se muestre como paciente sin identificar.
+25. Volver a la cuenta de administrador y desactivar al dentista desde el interruptor.
+26. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -473,6 +529,8 @@ conexión, Firebase ni emulador.
 - [x] Selección de dentista al agendar una cita.
 - [x] Horarios de atención por dentista con bloques de 15 minutos.
 - [x] Duración real de cada tratamiento y bloqueo de horarios ocupados.
+- [x] Agenda del dentista con las citas asignadas a su cuenta.
+- [x] Completado de citas atendidas desde el rol dentista.
 
 ## Autor
 

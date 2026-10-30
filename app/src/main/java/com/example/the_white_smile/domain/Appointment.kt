@@ -6,6 +6,9 @@ package com.example.the_white_smile.domain
  * en la zona horaria del dispositivo. [dentistName] se guarda junto con la
  * cita para poder mostrarla aunque el dentista cambie de nombre.
  * [durationMinutes] permite saber cuantos bloques de la agenda ocupa.
+ * [patientId] y [patientName] identifican al paciente para que el dentista
+ * pueda reconocer la cita en su agenda. Las citas anteriores a esta version
+ * no los tienen y solo se pueden consultar.
  */
 data class Appointment(
     val id: String,
@@ -15,7 +18,9 @@ data class Appointment(
     val dentistId: String? = null,
     val dentistName: String? = null,
     val treatmentId: String? = null,
-    val durationMinutes: Int = DEFAULT_DURATION_MINUTES
+    val durationMinutes: Int = DEFAULT_DURATION_MINUTES,
+    val patientId: String? = null,
+    val patientName: String? = null
 ) {
     companion object {
         /** Duracion asumida para citas creadas antes de esta version. */
