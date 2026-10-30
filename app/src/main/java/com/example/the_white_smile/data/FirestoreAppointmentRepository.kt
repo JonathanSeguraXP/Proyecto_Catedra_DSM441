@@ -170,11 +170,13 @@ class FirestoreAppointmentRepository(
             patientName?.trim()?.takeIf { it.isNotEmpty() }?.let {
                 data[FIELD_PATIENT_NAME] = it
             }
-            if (totalPriceCents > 0L && depositCents > 0L) {
+            if (totalPriceCents > 0L) {
                 data[FIELD_TOTAL_PRICE_CENTS] = totalPriceCents
-                data[FIELD_DEPOSIT_CENTS] = depositCents
-                data[FIELD_DEPOSIT_PERCENT] = depositPercent
-                data[FIELD_DEPOSIT_STATUS] = DEPOSIT_PENDING
+                if (depositCents > 0L) {
+                    data[FIELD_DEPOSIT_CENTS] = depositCents
+                    data[FIELD_DEPOSIT_PERCENT] = depositPercent
+                    data[FIELD_DEPOSIT_STATUS] = DEPOSIT_PENDING
+                }
             }
             transaction.set(appointmentRef, data)
         }.awaitResult()

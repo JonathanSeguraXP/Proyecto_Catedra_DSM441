@@ -131,7 +131,6 @@ class ProfileViewModel(
 
     fun saveProfilePhoto(photoBase64: String) {
         if (_uiState.value.isLoading) return
-        if (!_uiState.value.isDentist) return
         val uid = repository.currentUser?.uid ?: return
         if (photoBase64.length > MAX_PROFILE_PHOTO_LENGTH) {
             notify(R.string.profile_photo_too_large)

@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -13,12 +14,20 @@ import com.example.the_white_smile.domain.Appointment
 import com.example.the_white_smile.domain.AppointmentStatus
 import com.example.the_white_smile.util.DateFormats
 import com.example.the_white_smile.util.MoneyFormats
+import com.example.the_white_smile.util.ProfilePhotoCodec
 import com.google.android.material.button.MaterialButton
 
 /** Adaptador de la lista de citas. */
 class AppointmentAdapter(
     private val onCancel: (Appointment) -> Unit
 ) : ListAdapter<Appointment, AppointmentAdapter.ViewHolder>(Diff) {
+
+    private var treatmentPhotos: Map<String, String?> = emptyMap()
+
+    fun setTreatmentPhotos(photos: Map<String, String?>) {
+        treatmentPhotos = photos
+        notifyItemRangeChanged(0, itemCount)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -27,12 +36,14 @@ class AppointmentAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onCancel)
+        val appointment = getItem(position)
+        holder.bind(appointment, appointment.treatmentId?.let(treatmentPhotos::get), onCancel)
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val tvService: TextView = itemView.findViewById(R.id.tvAppointmentService)
+        private val ivTreatment: ImageView = itemView.findViewById(R.id.ivAppointmentTreatment)
         private val tvDateTime: TextView = itemView.findViewById(R.id.tvAppointmentDateTime)
         private val tvDentist: TextView = itemView.findViewById(R.id.tvAppointmentDentist)
         private val tvSuggestion: TextView = itemView.findViewById(R.id.tvAppointmentSuggestion)
@@ -41,10 +52,12 @@ class AppointmentAdapter(
         private val tvStatus: TextView = itemView.findViewById(R.id.tvAppointmentStatus)
         private val btnCancel: MaterialButton = itemView.findViewById(R.id.btnCancelAppointment)
 
-        fun bind(appointment: Appointment, onCancel: (Appointment) -> Unit) {
+        fun bind(appointment: Appointment, treatmentPhoto: String?, onCancel: (Appointment) -> Unit) {
             val context = itemView.context
 
             tvService.text = appointment.service
+            ProfilePhotoCodec.decode(treatmentPhoto)?.let(ivTreatment::setImageBitmap)
+                ?: ivTreatment.setImageResource(android.R.drawable.ic_menu_agenda)
             tvDateTime.text = DateFormats.dateTime(appointment.startAt)
 
             val dentistName = appointment.dentistName?.trim().orEmpty()

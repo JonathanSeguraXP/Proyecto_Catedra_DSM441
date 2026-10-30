@@ -172,7 +172,8 @@ class AppointmentsViewModel(
         treatmentId: String,
         startAt: Long,
         dentistId: String,
-        depositPercent: Int = 25
+        depositPercent: Int = 25,
+        customDepositCents: Long? = null
     ) {
         if (_uiState.value.isLoading) return
 
@@ -188,11 +189,11 @@ class AppointmentsViewModel(
                 notify(R.string.appointments_error_treatment)
                 return
             }
-            treatment.priceCents == null && pricingRepository != null -> {
+            treatment.priceCents == null && pricingRepository != null && depositPercent != 0 -> {
                 notify(R.string.appointments_deposit_missing)
                 return
             }
-            depositPercent != 25 && depositPercent != 50 -> {
+            depositPercent !in setOf(0, 25, 50, -1) -> {
                 notify(R.string.appointments_deposit_missing)
                 return
             }
@@ -221,6 +222,18 @@ class AppointmentsViewModel(
 
         runOperation(R.string.loading_saving_appointment) {
             val totalPriceCents = treatment.priceCents
+            val depositCents = when (depositPercent) {
+                0 -> 0L
+                25, 50 -> totalPriceCents?.let {
+                    MoneyFormats.percentageOf(it, depositPercent)
+                } ?: 0L
+                -1 -> customDepositCents ?: 0L
+                else -> 0L
+            }
+            if (depositPercent == -1 && (depositCents <= 0L || depositCents > (totalPriceCents ?: 0L))) {
+                notify(R.string.appointments_deposit_custom_invalid)
+                return@runOperation
+            }
             val result = if (totalPriceCents == null) {
                 repository.createAppointment(
                     service = treatment.name,
@@ -232,7 +245,6 @@ class AppointmentsViewModel(
                     patientName = patientName
                 )
             } else {
-                val depositCents = MoneyFormats.percentageOf(totalPriceCents, depositPercent)
                 repository.createAppointment(
                     service = treatment.name,
                     startAt = startAt,

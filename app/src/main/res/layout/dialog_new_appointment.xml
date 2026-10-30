@@ -96,7 +96,35 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/appointments_deposit_half" />
+
+            <RadioButton
+                android:id="@+id/rbDepositCustom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/appointments_deposit_custom" />
+
+            <RadioButton
+                android:id="@+id/rbDepositNone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/appointments_deposit_none" />
         </RadioGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilCustomDeposit"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:hint="@string/appointments_deposit_custom_amount_label"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etCustomDeposit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:id="@+id/tvDepositSummary"

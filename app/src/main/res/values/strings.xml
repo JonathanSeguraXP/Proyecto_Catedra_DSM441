@@ -103,6 +103,13 @@
     <string name="appointments_price_unconfigured">Precio pendiente de configuración</string>
     <string name="appointments_deposit_quarter">Abonar una cuarta parte (25%)</string>
     <string name="appointments_deposit_half">Abonar la mitad (50%)</string>
+    <string name="appointments_deposit_custom">Otro monto</string>
+    <string name="appointments_deposit_custom_amount_label">Monto personalizado en dólares</string>
+    <string name="appointments_deposit_none">No abonar</string>
+    <string name="appointments_deposit_custom_summary">Abono elegido: %1$s · Restante estimado: %2$s</string>
+    <string name="appointments_deposit_none_summary">Sin abono · Total estimado pendiente: %1$s</string>
+    <string name="appointments_deposit_unconfigured_none">Sin abono. El costo se confirma en el consultorio.</string>
+    <string name="appointments_deposit_custom_invalid">Ingresa un abono mayor que cero y no mayor que el precio total.</string>
     <string name="appointments_deposit_summary">Abono referencial pendiente en clínica: %1$s · Restante estimado: %2$s</string>
     <string name="appointments_deposit_missing">Este servicio aún no tiene precio configurado. Consulta con el consultorio.</string>
     <string name="appointments_deposit_pending">Abono referencial pendiente en clínica: %1$s de %2$s</string>

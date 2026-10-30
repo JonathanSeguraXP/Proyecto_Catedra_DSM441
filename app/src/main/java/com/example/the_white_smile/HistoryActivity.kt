@@ -86,6 +86,7 @@ class HistoryActivity : BaseActivity() {
     }
 
     private fun render(state: HistoryUiState) {
+        adapter.setTreatmentPhotos(state.treatments.associate { it.id to it.profilePhotoBase64 })
         adapter.submitList(state.appointments)
 
         layoutLoading.visibility = if (state.isLoading) View.VISIBLE else View.GONE

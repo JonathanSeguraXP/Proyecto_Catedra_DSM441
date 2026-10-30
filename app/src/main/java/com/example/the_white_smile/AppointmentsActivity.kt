@@ -3,6 +3,8 @@ package com.example.the_white_smile
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -29,6 +31,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -111,6 +114,7 @@ class AppointmentsActivity : BaseActivity() {
     }
 
     private fun render(state: AppointmentsUiState) {
+        adapter.setTreatmentPhotos(state.treatments.associate { it.id to it.profilePhotoBase64 })
         adapter.submitList(state.appointments)
         layoutEmpty.visibility = if (state.isEmpty) View.VISIBLE else View.GONE
         rvAppointments.visibility = if (state.isEmpty) View.GONE else View.VISIBLE
@@ -144,6 +148,12 @@ class AppointmentsActivity : BaseActivity() {
         val tvTreatmentPrice = content.findViewById<TextView>(R.id.tvTreatmentPrice)
         val depositOptions = content.findViewById<android.widget.RadioGroup>(R.id.rgDepositOptions)
         val tvDepositSummary = content.findViewById<TextView>(R.id.tvDepositSummary)
+        val tilCustomDeposit = content.findViewById<TextInputLayout>(R.id.tilCustomDeposit)
+        val etCustomDeposit = content.findViewById<TextInputEditText>(R.id.etCustomDeposit)
+        val rbDepositQuarter = content.findViewById<android.widget.RadioButton>(R.id.rbDepositQuarter)
+        val rbDepositHalf = content.findViewById<android.widget.RadioButton>(R.id.rbDepositHalf)
+        val rbDepositCustom = content.findViewById<android.widget.RadioButton>(R.id.rbDepositCustom)
+        val rbDepositNone = content.findViewById<android.widget.RadioButton>(R.id.rbDepositNone)
 
         val state = viewModel.uiState.value
         val dentists = state.dentists
@@ -160,8 +170,16 @@ class AppointmentsActivity : BaseActivity() {
             val total = treatment.priceCents
             if (total == null) {
                 tvTreatmentPrice.setText(R.string.appointments_price_unconfigured)
-                depositOptions.visibility = View.GONE
-                tvDepositSummary.visibility = View.GONE
+                rbDepositQuarter.visibility = View.GONE
+                rbDepositHalf.visibility = View.GONE
+                rbDepositCustom.visibility = View.GONE
+                rbDepositNone.visibility = View.VISIBLE
+                depositOptions.visibility = View.VISIBLE
+                depositOptions.check(R.id.rbDepositNone)
+                selectedDepositPercent = 0
+                tilCustomDeposit.visibility = View.GONE
+                tvDepositSummary.visibility = View.VISIBLE
+                tvDepositSummary.setText(R.string.appointments_deposit_unconfigured_none)
                 return
             }
             tvTreatmentPrice.text = getString(
@@ -169,13 +187,28 @@ class AppointmentsActivity : BaseActivity() {
                 MoneyFormats.usd(total)
             )
             depositOptions.visibility = View.VISIBLE
+            rbDepositQuarter.visibility = View.VISIBLE
+            rbDepositHalf.visibility = View.VISIBLE
+            rbDepositCustom.visibility = View.VISIBLE
+            rbDepositNone.visibility = View.VISIBLE
             tvDepositSummary.visibility = View.VISIBLE
-            val deposit = MoneyFormats.percentageOf(total, selectedDepositPercent)
-            tvDepositSummary.text = getString(
-                R.string.appointments_deposit_summary,
-                MoneyFormats.usd(deposit),
-                MoneyFormats.usd(total - deposit)
-            )
+            val deposit = when (selectedDepositPercent) {
+                0 -> 0L
+                25, 50 -> MoneyFormats.percentageOf(total, selectedDepositPercent)
+                else -> MoneyFormats.parseUsd(etCustomDeposit.text?.toString().orEmpty())
+            }
+            if (selectedDepositPercent == 0) {
+                tvDepositSummary.text = getString(R.string.appointments_deposit_none_summary, MoneyFormats.usd(total))
+            } else if (deposit == null || deposit > total) {
+                tvDepositSummary.setText(R.string.appointments_deposit_custom_invalid)
+            } else {
+                tvDepositSummary.text = getString(
+                    if (selectedDepositPercent == -1) R.string.appointments_deposit_custom_summary
+                    else R.string.appointments_deposit_summary,
+                    MoneyFormats.usd(deposit),
+                    MoneyFormats.usd(total - deposit)
+                )
+            }
         }
 
         fun resetTime() {
@@ -228,9 +261,22 @@ class AppointmentsActivity : BaseActivity() {
 
         depositOptions.check(R.id.rbDepositQuarter)
         depositOptions.setOnCheckedChangeListener { _, checkedId ->
-            selectedDepositPercent = if (checkedId == R.id.rbDepositHalf) 50 else 25
+            selectedDepositPercent = when (checkedId) {
+                R.id.rbDepositNone -> 0
+                R.id.rbDepositHalf -> 50
+                R.id.rbDepositCustom -> -1
+                else -> 25
+            }
+            tilCustomDeposit.visibility = if (selectedDepositPercent == -1) View.VISIBLE else View.GONE
             treatments.firstOrNull { it.id == selectedTreatmentId }?.let(::renderPriceBreakdown)
         }
+        etCustomDeposit.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                treatments.firstOrNull { it.id == selectedTreatmentId }?.let(::renderPriceBreakdown)
+            }
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
 
         btnPickDate.setOnClickListener {
             val current = selectedDayStart ?: System.currentTimeMillis()
@@ -298,16 +344,25 @@ class AppointmentsActivity : BaseActivity() {
                     treatmentId == null -> {
                         toastShort(R.string.appointments_error_treatment)
                     }
-                    selectedTreatment?.priceCents == null -> {
+                    selectedTreatment?.priceCents == null && selectedDepositPercent != 0 -> {
                         toastLong(getString(R.string.appointments_deposit_missing))
                     }
                     else -> {
+                        val customAmount = if (selectedDepositPercent == -1) {
+                            MoneyFormats.parseUsd(etCustomDeposit.text?.toString().orEmpty())
+                        } else null
+                        if (selectedDepositPercent == -1 &&
+                            (customAmount == null || customAmount > (selectedTreatment?.priceCents ?: 0L))) {
+                            toastShort(R.string.appointments_deposit_custom_invalid)
+                            return@setOnClickListener
+                        }
                         dialog.dismiss()
                         viewModel.createAppointment(
                             treatmentId,
                             startAt,
                             dentistId,
-                            selectedDepositPercent
+                            selectedDepositPercent,
+                            customAmount
                         )
                     }
                 }
