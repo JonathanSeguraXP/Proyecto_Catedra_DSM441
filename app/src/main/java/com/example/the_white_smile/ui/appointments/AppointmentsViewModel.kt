@@ -139,6 +139,9 @@ class AppointmentsViewModel(
         val state = _uiState.value
         val treatment = state.treatments.firstOrNull { it.id == treatmentId }
         val dentist = state.dentists.firstOrNull { it.id == dentistId }
+        val currentUser = authRepository.currentUser
+        val patientName = currentUser?.displayName?.trim()?.ifBlank { null }
+            ?: currentUser?.email
 
         when {
             treatment == null -> {
@@ -175,7 +178,8 @@ class AppointmentsViewModel(
                 treatmentId = treatment.id,
                 durationMinutes = treatment.durationMinutes,
                 dentistId = dentist.id,
-                dentistName = dentist.displayName
+                dentistName = dentist.displayName,
+                patientName = patientName
             )
                 .onSuccess {
                     clearAvailability()

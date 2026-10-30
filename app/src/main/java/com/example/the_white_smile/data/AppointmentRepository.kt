@@ -14,6 +14,13 @@ interface AppointmentRepository {
     fun observeAppointments(): Flow<List<Appointment>>
 
     /**
+     * Emite las citas asignadas al dentista, sin importar el paciente.
+     * Se usa en la agenda del dentista y requiere una regla de grupo de
+     * colecciones en Firestore.
+     */
+    fun observeDentistAppointments(dentistId: String): Flow<List<Appointment>>
+
+    /**
      * Emite los bloques ocupados de un dentista en un dia.
      * Solo expone la ocupacion, no las citas de otros pacientes.
      */
@@ -34,9 +41,16 @@ interface AppointmentRepository {
         treatmentId: String,
         durationMinutes: Int,
         dentistId: String,
-        dentistName: String
+        dentistName: String,
+        patientName: String? = null
     ): Result<Unit>
 
     /** Cancela la cita y libera sus bloques de la agenda del dentista. */
     suspend fun cancelAppointment(appointment: Appointment): Result<Unit>
+
+    /**
+     * Marca como completada una cita que ya ocurrio.
+     * Solo el dentista asignado puede hacerlo y la cita debe tener paciente.
+     */
+    suspend fun completeAppointment(appointment: Appointment): Result<Unit>
 }

@@ -241,6 +241,7 @@ class AppointmentsViewModelTest {
         assertEquals(futureStartAt, repository.lastStartAt)
         assertEquals(dentistId, repository.lastDentistId)
         assertEquals("Dra. Ana Ramirez", repository.lastDentistName)
+        assertEquals("Ana", repository.lastPatientName)
         assertFalse(viewModel.uiState.value.isLoading)
     }
 

@@ -49,6 +49,34 @@ class FirestoreAppointmentRepository(
         awaitClose { registration.remove() }
     }
 
+    override fun observeDentistAppointments(
+        dentistId: String
+    ): Flow<List<Appointment>> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null || dentistId.isBlank()) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
+        // Se ordena en el cliente para no requerir un indice compuesto.
+        val registration = firestore.collectionGroup(APPOINTMENTS)
+            .whereEqualTo(FIELD_DENTIST_ID, dentistId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val items = snapshot?.documents
+                    ?.mapNotNull { it.toAppointment() }
+                    ?.sortedBy { it.startAt }
+                    .orEmpty()
+                trySend(items)
+            }
+
+        awaitClose { registration.remove() }
+    }
+
     override fun observeBusySlots(
         dentistId: String,
         dayStartAt: Long,
@@ -79,7 +107,8 @@ class FirestoreAppointmentRepository(
         treatmentId: String,
         durationMinutes: Int,
         dentistId: String,
-        dentistName: String
+        dentistName: String,
+        patientName: String?
     ): Result<Unit> = runData {
         val uid = requireUid()
         val appointmentRef = appointmentsRef(uid).document()
@@ -103,19 +132,21 @@ class FirestoreAppointmentRepository(
                     )
                 )
             }
-            transaction.set(
-                appointmentRef,
-                mapOf(
-                    FIELD_SERVICE to service,
-                    FIELD_START_AT to startAt,
-                    FIELD_STATUS to AppointmentStatus.PENDING.name,
-                    FIELD_TREATMENT_ID to treatmentId,
-                    FIELD_DURATION_MINUTES to durationMinutes,
-                    FIELD_DENTIST_ID to dentistId,
-                    FIELD_DENTIST_NAME to dentistName,
-                    FIELD_CREATED_AT to createdAt
-                )
+            val data = mutableMapOf<String, Any?>(
+                FIELD_SERVICE to service,
+                FIELD_START_AT to startAt,
+                FIELD_STATUS to AppointmentStatus.PENDING.name,
+                FIELD_TREATMENT_ID to treatmentId,
+                FIELD_DURATION_MINUTES to durationMinutes,
+                FIELD_DENTIST_ID to dentistId,
+                FIELD_DENTIST_NAME to dentistName,
+                FIELD_PATIENT_ID to uid,
+                FIELD_CREATED_AT to createdAt
             )
+            patientName?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                data[FIELD_PATIENT_NAME] = it
+            }
+            transaction.set(appointmentRef, data)
         }.awaitResult()
         Unit
     }
@@ -157,6 +188,25 @@ class FirestoreAppointmentRepository(
         Unit
     }
 
+    override suspend fun completeAppointment(
+        appointment: Appointment
+    ): Result<Unit> = runData {
+        val uid = requireUid()
+        val patientId = appointment.patientId
+        if (patientId == null) {
+            throw IllegalStateException("La cita no tiene un paciente asociado")
+        }
+        if (appointment.dentistId != uid) {
+            throw IllegalStateException("La cita no pertenece al dentista actual")
+        }
+
+        appointmentsRef(patientId)
+            .document(appointment.id)
+            .update(FIELD_STATUS, AppointmentStatus.COMPLETED.name)
+            .awaitResult()
+        Unit
+    }
+
     private fun appointmentsRef(uid: String) =
         firestore.collection(USERS).document(uid).collection(APPOINTMENTS)
 
@@ -178,7 +228,9 @@ class FirestoreAppointmentRepository(
             dentistName = getString(FIELD_DENTIST_NAME),
             treatmentId = getString(FIELD_TREATMENT_ID),
             durationMinutes = getLong(FIELD_DURATION_MINUTES)?.toInt()
-                ?: Appointment.DEFAULT_DURATION_MINUTES
+                ?: Appointment.DEFAULT_DURATION_MINUTES,
+            patientId = getString(FIELD_PATIENT_ID),
+            patientName = getString(FIELD_PATIENT_NAME)
         )
     }
 
@@ -205,6 +257,7 @@ class FirestoreAppointmentRepository(
         const val FIELD_DENTIST_NAME = "dentistName"
         const val FIELD_APPOINTMENT_ID = "appointmentId"
         const val FIELD_PATIENT_ID = "patientId"
+        const val FIELD_PATIENT_NAME = "patientName"
         const val FIELD_CREATED_AT = "createdAt"
     }
 }

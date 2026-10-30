@@ -57,6 +57,7 @@
     <string name="menu_option_treatments">Tratamientos</string>
     <string name="menu_option_profile">Perfil</string>
     <string name="menu_option_history">Historial</string>
+    <string name="menu_option_agenda">Agenda</string>
     <string name="menu_option_contact">Contacto</string>
     <string name="menu_option_help">Ayuda</string>
     <string name="menu_option_dentists">Dentistas</string>
@@ -118,6 +119,23 @@
     <string name="loading_appointments">Cargando citas…</string>
     <string name="loading_saving_appointment">Agendando cita…</string>
     <string name="loading_cancel_appointment">Cancelando cita…</string>
+
+    <!-- Agenda del dentista -->
+    <string name="agenda_title">Mi agenda</string>
+    <string name="agenda_subtitle">Citas que los pacientes agendaron contigo</string>
+    <string name="agenda_empty_title">No tienes citas asignadas</string>
+    <string name="agenda_empty_message">Aquí aparecerán las citas que los pacientes agenden con tu cuenta.</string>
+    <string name="agenda_patient_label">Paciente: %1$s</string>
+    <string name="agenda_patient_unknown">Paciente sin identificar</string>
+    <string name="agenda_complete_action">Marcar completada</string>
+    <string name="agenda_complete_title">Completar cita</string>
+    <string name="agenda_complete_message">¿Confirmas que la cita de %1$s ya se atendió? Esta acción no se puede deshacer.</string>
+    <string name="agenda_complete_confirm">Sí, completar</string>
+    <string name="agenda_completed">Cita marcada como completada</string>
+    <string name="agenda_error_legacy">Esta cita es anterior a la agenda del dentista y no se puede completar desde aquí.</string>
+    <string name="agenda_error_future">Solo puedes completar citas cuya hora ya pasó.</string>
+    <string name="loading_agenda">Cargando agenda…</string>
+    <string name="loading_complete_appointment">Completando cita…</string>
 
     <!-- Historial -->
     <string name="history_title">Historial</string>
