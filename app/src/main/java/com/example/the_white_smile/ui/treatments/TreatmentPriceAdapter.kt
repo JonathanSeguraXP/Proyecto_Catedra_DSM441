@@ -13,7 +13,8 @@ import com.example.the_white_smile.util.MoneyFormats
 import com.google.android.material.button.MaterialButton
 
 class TreatmentPriceAdapter(
-    private val onEdit: (Treatment) -> Unit
+    private val onEdit: (Treatment) -> Unit,
+    private val onManage: (Treatment) -> Unit
 ) : ListAdapter<Treatment, TreatmentPriceAdapter.ViewHolder>(Diff) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -23,15 +24,16 @@ class TreatmentPriceAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onEdit)
+        holder.bind(getItem(position), onEdit, onManage)
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val name: TextView = itemView.findViewById(R.id.tvPriceTreatmentName)
         private val value: TextView = itemView.findViewById(R.id.tvPriceTreatmentValue)
         private val button: MaterialButton = itemView.findViewById(R.id.btnEditTreatmentPrice)
+        private val manageButton: MaterialButton = itemView.findViewById(R.id.btnManageTreatment)
 
-        fun bind(treatment: Treatment, onEdit: (Treatment) -> Unit) {
+        fun bind(treatment: Treatment, onEdit: (Treatment) -> Unit, onManage: (Treatment) -> Unit) {
             name.text = treatment.name
             val price = treatment.priceCents?.let(MoneyFormats::usd)
             value.text = if (price == null) {
@@ -40,6 +42,7 @@ class TreatmentPriceAdapter(
                 itemView.context.getString(R.string.treatment_prices_from_label, price)
             }
             button.setOnClickListener { onEdit(treatment) }
+            manageButton.setOnClickListener { onManage(treatment) }
         }
     }
 

@@ -41,7 +41,15 @@ class TreatmentPricesActivity : BaseActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        adapter = TreatmentPriceAdapter(::showPriceDialog)
+        adapter = TreatmentPriceAdapter(
+            onEdit = ::showPriceDialog,
+            onManage = { treatment ->
+                startActivity(
+                    Intent(this, TreatmentDetailActivity::class.java)
+                        .putExtra(TreatmentDetailActivity.EXTRA_TREATMENT_ID, treatment.id)
+                )
+            }
+        )
         findViewById<RecyclerView>(R.id.rvTreatmentPrices).adapter = adapter
         observeViewModel()
     }

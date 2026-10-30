@@ -40,6 +40,7 @@ class DentistAgendaAdapter(
         private val tvDeposit: TextView = itemView.findViewById(R.id.tvAgendaDeposit)
         private val tvStatus: TextView = itemView.findViewById(R.id.tvAgendaStatus)
         private val tvSuggestion: TextView = itemView.findViewById(R.id.tvAgendaSuggestion)
+        private val tvSuggestionLabel: TextView = itemView.findViewById(R.id.tvAgendaSuggestionLabel)
         private val btnSuggest: MaterialButton = itemView.findViewById(R.id.btnSuggestAppointment)
         private val btnComplete: MaterialButton =
             itemView.findViewById(R.id.btnCompleteAppointment)
@@ -59,8 +60,9 @@ class DentistAgendaAdapter(
                 else R.string.agenda_suggestion_edit
             )
             tvSuggestion.visibility = appointment.dentistSuggestion?.takeIf { it.isNotBlank() }
-                ?.let { tvSuggestion.text = context.getString(R.string.agenda_suggestion, it); View.VISIBLE }
+                ?.let { tvSuggestion.text = it; tvSuggestionLabel.visibility = View.VISIBLE; View.VISIBLE }
                 ?: View.GONE
+            if (appointment.dentistSuggestion.isNullOrBlank()) tvSuggestionLabel.visibility = View.GONE
             tvDateTime.text = DateFormats.dateTime(appointment.startAt)
             tvDuration.text = context.getString(
                 R.string.appointments_duration,

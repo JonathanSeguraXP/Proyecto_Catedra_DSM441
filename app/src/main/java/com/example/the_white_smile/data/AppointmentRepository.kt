@@ -2,6 +2,7 @@ package com.example.the_white_smile.data
 
 import com.example.the_white_smile.domain.Appointment
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Contrato de acceso a las citas del usuario.
@@ -19,6 +20,9 @@ interface AppointmentRepository {
      * colecciones en Firestore.
      */
     fun observeDentistAppointments(dentistId: String): Flow<List<Appointment>>
+
+    /** Todas las citas para el panel de estadísticas del administrador. */
+    fun observeAllAppointments(): Flow<List<Appointment>> = flowOf(emptyList())
 
     /**
      * Emite los bloques ocupados de un dentista en un dia.

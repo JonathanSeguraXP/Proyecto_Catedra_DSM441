@@ -244,7 +244,16 @@
     <string name="treatment_edit_duration">Duración en minutos</string>
     <string name="treatment_edit_recommendations">Recomendaciones (una por línea)</string>
     <string name="treatment_edit_price">Precio en dólares</string>
-    <string name="agenda_suggestion">Sugerencia del dentista: %1$s</string>
+    <string name="agenda_suggestion">Sugerencia del dentista</string>
+    <string name="stats_total_completed">Consultas completadas</string>
+    <string name="stats_this_month">Este mes</string>
+    <string name="stats_last_months">Actividad de los últimos seis meses</string>
+    <string name="stats_title">Estadísticas</string>
+    <string name="stats_admin_subtitle">Resumen general de consultas completadas</string>
+    <string name="stats_dentist_subtitle">Resumen de tus consultas completadas</string>
+    <string name="stats_no_data">Aún no hay consultas completadas</string>
+    <string name="stats_access_denied">Esta sección es solo para el administrador</string>
+    <string name="menu_option_statistics">Estadísticas</string>
     <string name="agenda_suggestion_action">Añadir sugerencia</string>
     <string name="agenda_suggestion_edit">Editar sugerencia</string>
     <string name="save_changes">Guardar</string>

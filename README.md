@@ -56,7 +56,7 @@ implementación de datos sin modificar la interfaz de usuario.
 - El menú se construye según el rol:
   - **Paciente:** Citas, Tratamientos, Perfil, Historial, Contacto y Ayuda.
   - **Dentista:** Agenda, Tratamientos, Perfil, Contacto y Ayuda.
-  - **Administrador:** Tratamientos, Perfil, Contacto, Ayuda y Dentistas.
+- **Administrador:** Dentistas, Estadísticas, Precios, Tratamientos, Perfil, Contacto y Ayuda.
 - Si la lectura del perfil falla, la aplicación continúa como paciente en lugar de
   bloquear el acceso.
 - El administrador inicial se crea una sola vez de forma manual (ver configuración).
@@ -129,6 +129,8 @@ implementación de datos sin modificar la interfaz de usuario.
   al paciente en su lista de citas.
 - Las citas futuras no muestran el botón de completar y el ViewModel vuelve a validar
   la fecha antes de llamar a Firestore.
+- Resumen visual de consultas completadas: total histórico, total del mes y barras de
+  actividad de los últimos seis meses. El administrador ve el resumen del consultorio.
 - Las citas creadas antes de esta versión no tienen `patientId`, por lo que no se pueden
   completar desde la agenda; se muestran con el paciente sin identificar.
 - Estado vacío, indicador de carga y traducción de los errores de Cloud Firestore.
@@ -377,14 +379,14 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    El catálogo incluye precios referenciales desde, basados en tarifas publicadas en
    El Salvador; administración puede ajustarlos desde el panel. El costo final de los
    tratamientos variables se confirma tras la evaluación clínica. Al reservar, el
-   paciente elige un abono estimado de 25% o 50%; la app lo registra como pendiente de
+   paciente puede elegir 25%, 50%, un monto personalizado o no abonar; la app registra
+   el monto como pendiente de
    pago en clínica, no procesa ni confirma pagos. El teléfono y WhatsApp se editan en
    `res/values/strings.xml`.
    Los bloques ocupados de la agenda (`dentists/{id}/slots`) se leen con sesión
    iniciada, pero cada paciente solo puede crear o borrar los suyos. La agenda del
-   dentista usa una consulta de grupo de colecciones sobre `appointments`; la regla
-   de esa ruta se aplica a la consulta y el filtro por `dentistId` limita los resultados
-   a las citas del dentista autenticado:
+   dentista usa una consulta de grupo de colecciones sobre `appointments`; las reglas
+   permiten al dentista leer solo sus citas y al administrador leerlas para sus estadísticas:
 
 ```
 rules_version = '2';
@@ -468,8 +470,8 @@ service cloud.firestore {
 
     // Consulta de grupo utilizada por la agenda del dentista.
     match /{path=**}/appointments/{appointmentId} {
-      allow read: if request.auth != null &&
-        resource.data.dentistId == request.auth.uid;
+      allow read: if isAdmin() ||
+        (request.auth != null && resource.data.dentistId == request.auth.uid);
     }
   }
 }

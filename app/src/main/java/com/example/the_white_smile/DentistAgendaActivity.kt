@@ -46,6 +46,9 @@ class DentistAgendaActivity : BaseActivity() {
         setupToolbar()
         bindViews()
         setupList()
+        findViewById<View>(R.id.btnOpenDentistStats).setOnClickListener {
+            startActivity(Intent(this, ConsultationStatsActivity::class.java))
+        }
         observeViewModel()
     }
 

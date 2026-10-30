@@ -77,6 +77,18 @@ class FirestoreAppointmentRepository(
         awaitClose { registration.remove() }
     }
 
+    override fun observeAllAppointments(): Flow<List<Appointment>> = callbackFlow {
+        val registration = firestore.collectionGroup(APPOINTMENTS)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents.orEmpty().mapNotNull { it.toAppointment() })
+            }
+        awaitClose { registration.remove() }
+    }
+
     override fun observeBusySlots(
         dentistId: String,
         dayStartAt: Long,

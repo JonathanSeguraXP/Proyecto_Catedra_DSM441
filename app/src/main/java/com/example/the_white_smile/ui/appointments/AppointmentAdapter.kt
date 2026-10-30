@@ -47,6 +47,7 @@ class AppointmentAdapter(
         private val tvDateTime: TextView = itemView.findViewById(R.id.tvAppointmentDateTime)
         private val tvDentist: TextView = itemView.findViewById(R.id.tvAppointmentDentist)
         private val tvSuggestion: TextView = itemView.findViewById(R.id.tvAppointmentSuggestion)
+        private val tvSuggestionLabel: TextView = itemView.findViewById(R.id.tvAppointmentSuggestionLabel)
         private val tvPrice: TextView = itemView.findViewById(R.id.tvAppointmentPrice)
         private val tvDeposit: TextView = itemView.findViewById(R.id.tvAppointmentDeposit)
         private val tvStatus: TextView = itemView.findViewById(R.id.tvAppointmentStatus)
@@ -64,9 +65,13 @@ class AppointmentAdapter(
             tvDentist.visibility = if (dentistName.isEmpty()) View.GONE else View.VISIBLE
             tvDentist.text = context.getString(R.string.appointments_dentist_label, dentistName)
             appointment.dentistSuggestion?.takeIf { it.isNotBlank() }?.let {
-                tvSuggestion.text = context.getString(R.string.agenda_suggestion, it)
+                tvSuggestion.text = it
+                tvSuggestionLabel.visibility = View.VISIBLE
                 tvSuggestion.visibility = View.VISIBLE
-            } ?: run { tvSuggestion.visibility = View.GONE }
+            } ?: run {
+                tvSuggestionLabel.visibility = View.GONE
+                tvSuggestion.visibility = View.GONE
+            }
 
             tvPrice.visibility = if (appointment.totalPriceCents == null) View.GONE else View.VISIBLE
             if (appointment.totalPriceCents != null) {

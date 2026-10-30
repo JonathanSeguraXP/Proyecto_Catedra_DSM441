@@ -220,6 +220,11 @@ class MenuActivity : BaseActivity() {
                 DentistsActivity::class.java
             ),
             MenuOption(
+                R.string.menu_option_statistics,
+                android.R.drawable.ic_menu_sort_by_size,
+                ConsultationStatsActivity::class.java
+            ),
+            MenuOption(
                 R.string.menu_option_prices,
                 android.R.drawable.ic_menu_edit,
                 TreatmentPricesActivity::class.java

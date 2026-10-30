@@ -53,10 +53,20 @@
             tools:text="Duración: 30 min" />
 
         <TextView
-            android:id="@+id/tvAgendaSuggestion"
+            android:id="@+id/tvAgendaSuggestionLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:text="@string/agenda_suggestion"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvAgendaSuggestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:visibility="gone"
             tools:text="Sugerencia del dentista: Mantén la zona limpia." />
