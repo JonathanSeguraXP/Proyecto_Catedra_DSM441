@@ -164,7 +164,13 @@ class AppointmentsActivity : BaseActivity() {
             ArrayAdapter(
                 this,
                 android.R.layout.simple_list_item_1,
-                dentists.map { it.displayName }
+                dentists.map { dentist ->
+                    getString(
+                        R.string.appointments_dentist_option,
+                        dentist.displayName,
+                        dentist.specialty.ifBlank { getString(R.string.dentist_specialty_general) }
+                    )
+                }
             )
         )
         actDentist.setOnItemClickListener { _, _, position, _ ->
@@ -239,7 +245,13 @@ class AppointmentsActivity : BaseActivity() {
                 // Si el usuario escribio el nombre sin tocar la lista, se busca igual.
                 val typedDentist = actDentist.text?.toString()?.trim().orEmpty()
                 val dentistId = selectedDentistId
-                    ?: dentists.firstOrNull { it.displayName == typedDentist }?.id
+                    ?: dentists.firstOrNull { dentist ->
+                        getString(
+                            R.string.appointments_dentist_option,
+                            dentist.displayName,
+                            dentist.specialty.ifBlank { getString(R.string.dentist_specialty_general) }
+                        ) == typedDentist
+                    }?.id
                 val typedTreatment = actTreatment.text?.toString()?.trim().orEmpty()
                 val treatmentId = selectedTreatmentId
                     ?: treatments.firstOrNull { it.name == typedTreatment }?.id

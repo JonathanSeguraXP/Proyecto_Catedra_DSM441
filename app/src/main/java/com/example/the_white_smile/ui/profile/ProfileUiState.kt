@@ -7,6 +7,7 @@ import com.example.the_white_smile.R
 data class ProfileUiState(
     val name: String = "",
     val email: String? = null,
+    val specialty: String? = null,
     val isEmailVerified: Boolean = false,
     val isLoading: Boolean = false,
     @param:StringRes val loadingMessage: Int = R.string.loading_profile

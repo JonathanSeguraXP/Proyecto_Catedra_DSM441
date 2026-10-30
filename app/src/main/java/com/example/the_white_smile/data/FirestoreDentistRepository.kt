@@ -55,6 +55,7 @@ class FirestoreDentistRepository(
                     FIELD_EMAIL to email,
                     FIELD_NAME to displayName,
                     FIELD_ROLE to UserRole.DENTIST.name,
+                    FIELD_SPECIALTY to specialty,
                     FIELD_ACTIVE to true
                 )
             )

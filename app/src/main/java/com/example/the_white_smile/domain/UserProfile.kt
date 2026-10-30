@@ -11,5 +11,6 @@ data class UserProfile(
     val email: String?,
     val displayName: String?,
     val role: UserRole = UserRole.PATIENT,
+    val specialty: String? = null,
     val active: Boolean = true
 )

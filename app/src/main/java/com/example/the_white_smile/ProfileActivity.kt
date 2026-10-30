@@ -30,6 +30,7 @@ class ProfileActivity : BaseActivity() {
 
     private lateinit var tvProfileName: TextView
     private lateinit var tvProfileEmail: TextView
+    private lateinit var tvProfileSpecialty: TextView
     private lateinit var tvEmailStatus: TextView
     private lateinit var btnVerifyEmail: MaterialButton
     private lateinit var etProfileName: TextInputEditText
@@ -77,6 +78,7 @@ class ProfileActivity : BaseActivity() {
     private fun bindViews() {
         tvProfileName = findViewById(R.id.tvProfileName)
         tvProfileEmail = findViewById(R.id.tvProfileEmail)
+        tvProfileSpecialty = findViewById(R.id.tvProfileSpecialty)
         tvEmailStatus = findViewById(R.id.tvEmailStatus)
         btnVerifyEmail = findViewById(R.id.btnVerifyEmail)
         etProfileName = findViewById(R.id.etProfileName)
@@ -106,6 +108,10 @@ class ProfileActivity : BaseActivity() {
     private fun render(state: ProfileUiState) {
         tvProfileName.text = state.name.ifBlank { getString(R.string.profile_title) }
         tvProfileEmail.text = state.email.orEmpty()
+        tvProfileSpecialty.visibility = if (state.specialty.isNullOrBlank()) View.GONE else View.VISIBLE
+        if (!state.specialty.isNullOrBlank()) {
+            tvProfileSpecialty.text = getString(R.string.profile_specialty, state.specialty)
+        }
 
         // Solo se escribe el campo cuando el nombre cambia desde el ViewModel.
         if (lastRenderedName != state.name) {

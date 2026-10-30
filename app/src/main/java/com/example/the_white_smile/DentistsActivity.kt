@@ -4,6 +4,8 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -130,7 +132,12 @@ class DentistsActivity : BaseActivity() {
 
         val content = layoutInflater.inflate(R.layout.dialog_new_dentist, null)
         val etName = content.findViewById<TextInputEditText>(R.id.etDentistName)
-        val etSpecialty = content.findViewById<TextInputEditText>(R.id.etDentistSpecialty)
+        val actSpecialty = content.findViewById<AutoCompleteTextView>(R.id.actDentistSpecialty)
+        val specialties = resources.getStringArray(R.array.dentist_specialties)
+        actSpecialty.setAdapter(
+            ArrayAdapter(this, android.R.layout.simple_list_item_1, specialties)
+        )
+        actSpecialty.setOnClickListener { actSpecialty.showDropDown() }
         val etEmail = content.findViewById<TextInputEditText>(R.id.etDentistEmail)
         val etPassword = content.findViewById<TextInputEditText>(R.id.etDentistPassword)
         val schedule = ScheduleControls(
@@ -155,7 +162,7 @@ class DentistsActivity : BaseActivity() {
                 val input = schedule.input()
                 viewModel.createDentist(
                     displayName = etName.text?.toString().orEmpty(),
-                    specialty = etSpecialty.text?.toString().orEmpty(),
+                    specialty = actSpecialty.text?.toString().orEmpty(),
                     email = etEmail.text?.toString().orEmpty(),
                     password = etPassword.text?.toString().orEmpty(),
                     workDays = input.workDays,

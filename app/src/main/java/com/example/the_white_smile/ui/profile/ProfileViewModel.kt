@@ -11,6 +11,7 @@ import com.example.the_white_smile.R
 import com.example.the_white_smile.core.ServiceLocator
 import com.example.the_white_smile.data.AndroidConnectivityChecker
 import com.example.the_white_smile.data.AuthRepository
+import com.example.the_white_smile.data.UserRepository
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.ConnectivityChecker
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,7 +29,8 @@ import kotlinx.coroutines.launch
  */
 class ProfileViewModel(
     private val repository: AuthRepository,
-    private val connectivity: ConnectivityChecker
+    private val connectivity: ConnectivityChecker,
+    private val userRepository: UserRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -39,6 +41,7 @@ class ProfileViewModel(
 
     init {
         loadSession()
+        loadSpecialty()
     }
 
     /** La pantalla solo debe mostrarse con una sesion activa. */
@@ -52,6 +55,7 @@ class ProfileViewModel(
         viewModelScope.launch {
             repository.reloadUser()
             loadSession()
+            loadSpecialty()
         }
     }
 
@@ -133,6 +137,15 @@ class ProfileViewModel(
         }
     }
 
+    private fun loadSpecialty() {
+        val uid = repository.currentUser?.uid ?: return
+        val profiles = userRepository ?: return
+        viewModelScope.launch {
+            val specialty = profiles.getProfile(uid).getOrNull()?.specialty
+            _uiState.update { it.copy(specialty = specialty?.takeIf(String::isNotBlank)) }
+        }
+    }
+
     private fun isOnline(): Boolean {
         if (connectivity.isOnline()) return true
         notify(R.string.error_no_connection)
@@ -164,7 +177,8 @@ class ProfileViewModel(
             initializer {
                 ProfileViewModel(
                     repository = ServiceLocator.authRepository,
-                    connectivity = AndroidConnectivityChecker(context.applicationContext)
+                    connectivity = AndroidConnectivityChecker(context.applicationContext),
+                    userRepository = ServiceLocator.userRepository
                 )
             }
         }

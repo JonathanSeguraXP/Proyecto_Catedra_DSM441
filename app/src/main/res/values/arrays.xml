@@ -1,2 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources />
+<resources>
+    <string-array name="dentist_specialties">
+        <item>Odontología general</item>
+        <item>Ortodoncia</item>
+        <item>Endodoncia</item>
+        <item>Periodoncia</item>
+        <item>Cirugía oral y maxilofacial</item>
+        <item>Odontopediatría</item>
+        <item>Rehabilitación oral y prótesis</item>
+        <item>Implantología</item>
+        <item>Odontología estética</item>
+    </string-array>
+</resources>

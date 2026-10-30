@@ -31,18 +31,18 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilDentistSpecialty"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:hint="@string/dentists_specialty_hint">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etDentistSpecialty"
+            <AutoCompleteTextView
+                android:id="@+id/actDentistSpecialty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="text"
-                android:maxLines="1" />
+                android:inputType="none"
+                android:textSize="16sp" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout

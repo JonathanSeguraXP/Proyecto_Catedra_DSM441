@@ -67,6 +67,7 @@
     <string name="profile_title">Mi perfil</string>
     <string name="profile_email_verified">Correo verificado</string>
     <string name="profile_email_unverified">Correo sin verificar</string>
+    <string name="profile_specialty">Especialidad: %1$s</string>
     <string name="profile_btn_save">Guardar cambios</string>
     <string name="profile_btn_verify_email">Verificar correo</string>
     <string name="profile_btn_change_password">Cambiar contraseña</string>
@@ -89,6 +90,8 @@
     <string name="appointments_dialog_title">Nueva cita</string>
     <string name="appointments_treatment_hint">Tratamiento</string>
     <string name="appointments_dentist_hint">Dentista</string>
+    <string name="appointments_dentist_option">%1$s · %2$s</string>
+    <string name="dentist_specialty_general">Odontología general</string>
     <string name="appointments_no_dentists">No hay dentistas disponibles. Pide al administrador que cree una cuenta.</string>
     <string name="appointments_error_dentist">Selecciona un dentista</string>
     <string name="appointments_dentist_label">Con %1$s</string>

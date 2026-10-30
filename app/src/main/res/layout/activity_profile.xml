@@ -60,6 +60,17 @@
                     tools:text="correo@ejemplo.com" />
 
                 <TextView
+                    android:id="@+id/tvProfileSpecialty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    android:visibility="gone"
+                    tools:text="Especialidad: Ortodoncia" />
+
+                <TextView
                     android:id="@+id/tvEmailStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
