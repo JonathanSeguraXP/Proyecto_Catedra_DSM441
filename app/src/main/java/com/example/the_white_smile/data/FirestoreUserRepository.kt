@@ -19,14 +19,21 @@ class FirestoreUserRepository(
     override suspend fun getProfile(uid: String): Result<UserProfile?> = runData {
         val snapshot = usersRef().document(uid).get().awaitResult()
         val profile = snapshot.toUserProfile() ?: return@runData null
-        if (profile.role != UserRole.DENTIST || !profile.specialty.isNullOrBlank()) {
+        if (profile.role != UserRole.DENTIST ||
+            (!profile.specialty.isNullOrBlank() && !profile.profilePhotoBase64.isNullOrBlank())
+        ) {
             return@runData profile
         }
 
         // Compatibilidad con dentistas creados antes de guardar la especialidad
         // también en users/{uid}.
         val dentist = firestore.collection(DENTISTS).document(uid).get().awaitResult()
-        profile.copy(specialty = dentist.getString(FIELD_SPECIALTY))
+        profile.copy(
+            specialty = profile.specialty?.takeIf(String::isNotBlank)
+                ?: dentist.getString(FIELD_SPECIALTY),
+            profilePhotoBase64 = profile.profilePhotoBase64
+                ?: dentist.getString(FIELD_PROFILE_PHOTO)
+        )
     }
 
     private fun usersRef() = firestore.collection(USERS)
@@ -39,6 +46,7 @@ class FirestoreUserRepository(
             displayName = getString(FIELD_NAME),
             role = UserRole.from(getString(FIELD_ROLE)),
             specialty = getString(FIELD_SPECIALTY),
+            profilePhotoBase64 = getString(FIELD_PROFILE_PHOTO),
             active = getBoolean(FIELD_ACTIVE) ?: true
         )
     }
@@ -59,6 +67,7 @@ class FirestoreUserRepository(
         const val FIELD_NAME = "displayName"
         const val FIELD_ROLE = "role"
         const val FIELD_SPECIALTY = "specialty"
+        const val FIELD_PROFILE_PHOTO = "profilePhotoBase64"
         const val FIELD_ACTIVE = "active"
     }
 }

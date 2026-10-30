@@ -123,6 +123,16 @@ class FirestoreDentistRepository(
         Unit
     }
 
+    override suspend fun updateProfilePhoto(
+        dentistId: String,
+        photoBase64: String
+    ): Result<Unit> = runData {
+        dentistsRef().document(dentistId)
+            .update(FIELD_PROFILE_PHOTO, photoBase64)
+            .awaitResult()
+        Unit
+    }
+
     private fun dentistsRef() = firestore.collection(DENTISTS)
 
     /** Los dias se guardan como una lista ordenada para poder leerlos desde la consola. */
@@ -145,6 +155,7 @@ class FirestoreDentistRepository(
             displayName = name,
             email = email,
             specialty = getString(FIELD_SPECIALTY).orEmpty(),
+            profilePhotoBase64 = getString(FIELD_PROFILE_PHOTO),
             active = getBoolean(FIELD_ACTIVE) ?: true,
             workDays = readWorkDays(),
             startMinute = getLong(FIELD_START_MINUTE)?.toInt()
@@ -177,6 +188,7 @@ class FirestoreDentistRepository(
         const val FIELD_NAME = "displayName"
         const val FIELD_EMAIL = "email"
         const val FIELD_SPECIALTY = "specialty"
+        const val FIELD_PROFILE_PHOTO = "profilePhotoBase64"
         const val FIELD_ROLE = "role"
         const val FIELD_ACTIVE = "active"
         const val FIELD_WORK_DAYS = "workDays"

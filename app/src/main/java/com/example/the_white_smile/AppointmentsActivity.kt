@@ -21,6 +21,7 @@ import com.example.the_white_smile.ui.appointments.AppointmentAdapter
 import com.example.the_white_smile.ui.appointments.AppointmentsEvent
 import com.example.the_white_smile.ui.appointments.AppointmentsUiState
 import com.example.the_white_smile.ui.appointments.AppointmentsViewModel
+import com.example.the_white_smile.ui.appointments.DentistOptionAdapter
 import com.example.the_white_smile.util.DateFormats
 import com.example.the_white_smile.util.FirestoreErrors
 import com.google.android.material.appbar.MaterialToolbar
@@ -160,19 +161,7 @@ class AppointmentsActivity : BaseActivity() {
         }
 
         // Solo se ofrecen dentistas activos, cargados por el ViewModel.
-        actDentist.setAdapter(
-            ArrayAdapter(
-                this,
-                android.R.layout.simple_list_item_1,
-                dentists.map { dentist ->
-                    getString(
-                        R.string.appointments_dentist_option,
-                        dentist.displayName,
-                        dentist.specialty.ifBlank { getString(R.string.dentist_specialty_general) }
-                    )
-                }
-            )
-        )
+        actDentist.setAdapter(DentistOptionAdapter(this, dentists))
         actDentist.setOnItemClickListener { _, _, position, _ ->
             selectedDentistId = dentists[position].id
             resetTime()
@@ -245,12 +234,8 @@ class AppointmentsActivity : BaseActivity() {
                 // Si el usuario escribio el nombre sin tocar la lista, se busca igual.
                 val typedDentist = actDentist.text?.toString()?.trim().orEmpty()
                 val dentistId = selectedDentistId
-                    ?: dentists.firstOrNull { dentist ->
-                        getString(
-                            R.string.appointments_dentist_option,
-                            dentist.displayName,
-                            dentist.specialty.ifBlank { getString(R.string.dentist_specialty_general) }
-                        ) == typedDentist
+                    ?: dentists.firstOrNull {
+                        DentistOptionAdapter.optionLabel(this, it) == typedDentist
                     }?.id
                 val typedTreatment = actTreatment.text?.toString()?.trim().orEmpty()
                 val treatmentId = selectedTreatmentId

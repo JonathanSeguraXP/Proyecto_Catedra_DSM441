@@ -13,6 +13,7 @@ data class Dentist(
     val displayName: String,
     val email: String?,
     val specialty: String,
+    val profilePhotoBase64: String? = null,
     val active: Boolean = true,
     val workDays: Set<Int> = DEFAULT_WORK_DAYS,
     val startMinute: Int = DEFAULT_START_MINUTE,

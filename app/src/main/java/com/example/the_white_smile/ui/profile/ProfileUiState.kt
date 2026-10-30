@@ -8,6 +8,8 @@ data class ProfileUiState(
     val name: String = "",
     val email: String? = null,
     val specialty: String? = null,
+    val profilePhotoBase64: String? = null,
+    val isDentist: Boolean = false,
     val isEmailVerified: Boolean = false,
     val isLoading: Boolean = false,
     @param:StringRes val loadingMessage: Int = R.string.loading_profile

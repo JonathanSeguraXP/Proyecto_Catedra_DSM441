@@ -68,6 +68,11 @@
     <string name="profile_email_verified">Correo verificado</string>
     <string name="profile_email_unverified">Correo sin verificar</string>
     <string name="profile_specialty">Especialidad: %1$s</string>
+    <string name="profile_btn_add_photo">Agregar foto</string>
+    <string name="profile_btn_change_photo">Cambiar foto</string>
+    <string name="profile_photo_saved">Foto de perfil actualizada</string>
+    <string name="profile_photo_too_large">No se pudo comprimir la foto. Elige otra imagen más sencilla.</string>
+    <string name="profile_photo_read_error">No se pudo leer la imagen seleccionada</string>
     <string name="profile_btn_save">Guardar cambios</string>
     <string name="profile_btn_verify_email">Verificar correo</string>
     <string name="profile_btn_change_password">Cambiar contraseña</string>
@@ -79,6 +84,7 @@
     <string name="profile_error_name_empty">Ingresa tu nombre</string>
     <string name="profile_error_name_too_long">El nombre es demasiado largo</string>
     <string name="loading_profile">Guardando cambios…</string>
+    <string name="loading_profile_photo">Guardando foto…</string>
     <string name="loading_verification">Enviando verificación…</string>
     <string name="loading_password">Enviando correo…</string>
 

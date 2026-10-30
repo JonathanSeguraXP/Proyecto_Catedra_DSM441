@@ -11,9 +11,11 @@ import com.example.the_white_smile.R
 import com.example.the_white_smile.core.ServiceLocator
 import com.example.the_white_smile.data.AndroidConnectivityChecker
 import com.example.the_white_smile.data.AuthRepository
+import com.example.the_white_smile.data.DentistRepository
 import com.example.the_white_smile.data.UserRepository
 import com.example.the_white_smile.domain.AuthResult
 import com.example.the_white_smile.domain.ConnectivityChecker
+import com.example.the_white_smile.domain.UserRole
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,7 +32,8 @@ import kotlinx.coroutines.launch
 class ProfileViewModel(
     private val repository: AuthRepository,
     private val connectivity: ConnectivityChecker,
-    private val userRepository: UserRepository? = null
+    private val userRepository: UserRepository? = null,
+    private val dentistRepository: DentistRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -126,6 +129,27 @@ class ProfileViewModel(
         }
     }
 
+    fun saveProfilePhoto(photoBase64: String) {
+        if (_uiState.value.isLoading) return
+        if (!_uiState.value.isDentist) return
+        val uid = repository.currentUser?.uid ?: return
+        if (photoBase64.length > MAX_PROFILE_PHOTO_LENGTH) {
+            notify(R.string.profile_photo_too_large)
+            return
+        }
+        if (!isOnline()) return
+
+        val dentists = dentistRepository ?: return
+        runOperation(R.string.loading_profile_photo) {
+            dentists.updateProfilePhoto(uid, photoBase64)
+                .onSuccess {
+                    _uiState.update { it.copy(profilePhotoBase64 = photoBase64) }
+                    notify(R.string.profile_photo_saved)
+                }
+                .onFailure { _events.emit(ProfileEvent.Error(it)) }
+        }
+    }
+
     private fun loadSession() {
         val user = repository.currentUser ?: return
         _uiState.update {
@@ -141,8 +165,14 @@ class ProfileViewModel(
         val uid = repository.currentUser?.uid ?: return
         val profiles = userRepository ?: return
         viewModelScope.launch {
-            val specialty = profiles.getProfile(uid).getOrNull()?.specialty
-            _uiState.update { it.copy(specialty = specialty?.takeIf(String::isNotBlank)) }
+            val profile = profiles.getProfile(uid).getOrNull()
+            _uiState.update {
+                it.copy(
+                    specialty = profile?.specialty?.takeIf(String::isNotBlank),
+                    profilePhotoBase64 = profile?.profilePhotoBase64,
+                    isDentist = profile?.role == UserRole.DENTIST
+                )
+            }
         }
     }
 
@@ -172,13 +202,15 @@ class ProfileViewModel(
     companion object {
         /** Firebase no impone un limite, pero la interfaz se mantiene razonable. */
         private const val MAX_NAME_LENGTH = 40
+        private const val MAX_PROFILE_PHOTO_LENGTH = 82_000
 
         fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 ProfileViewModel(
                     repository = ServiceLocator.authRepository,
                     connectivity = AndroidConnectivityChecker(context.applicationContext),
-                    userRepository = ServiceLocator.userRepository
+                    userRepository = ServiceLocator.userRepository,
+                    dentistRepository = ServiceLocator.dentistRepository(context)
                 )
             }
         }

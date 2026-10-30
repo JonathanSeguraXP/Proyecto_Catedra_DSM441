@@ -357,10 +357,15 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
 5. Registrar el SHA-1 de la firma de depuración en la configuración del proyecto
    para que el inicio de sesión con Google funcione correctamente.
 6. En Firestore Database, crear la base de datos y publicar las reglas. Cada usuario
-   puede leer su propio perfil; solo el administrador puede modificarlo. Las citas
+   puede leer su propio perfil; solo el administrador puede modificarlo. El administrador
+   gestiona perfiles y horarios de dentistas; cada dentista solo puede actualizar su foto.
+   Las citas
    siguen limitadas al usuario dueño del documento, pero el dentista asignado también
    puede leerlas y marcar su estado como `COMPLETED`. Los dentistas son visibles para
-   todos los usuarios autenticados, pero solo el administrador puede modificarlos.
+   todos los usuarios autenticados; solo el administrador puede modificar sus datos de
+   trabajo y cada dentista puede actualizar únicamente `profilePhotoBase64`.
+   Las fotos de perfil se guardan como miniaturas JPEG comprimidas en el documento del
+   dentista en Firestore; no requieren Cloud Storage.
    Los bloques ocupados de la agenda (`dentists/{id}/slots`) se leen con sesión
    iniciada, pero cada paciente solo puede crear o borrar los suyos. La agenda del
    dentista usa una consulta de grupo de colecciones sobre `appointments`; la regla
@@ -378,13 +383,21 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if isAdmin();
     }
 
     match /dentists/{dentistId} {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      // El dentista puede cambiar únicamente su miniatura de perfil.
+      allow update: if isAdmin() ||
+        (request.auth != null && request.auth.uid == dentistId &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['profilePhotoBase64']) &&
+          request.resource.data.profilePhotoBase64 is string &&
+          request.resource.data.profilePhotoBase64.size() <= 80000);
 
       match /slots/{slotId} {
         // Cualquier paciente autenticado ve la ocupacion, pero no la cita.
@@ -401,13 +414,23 @@ service cloud.firestore {
       // El paciente ve sus citas y el dentista ve las que tiene asignadas.
       allow read: if request.auth != null &&
         (request.auth.uid == uid || resource.data.dentistId == request.auth.uid);
-      allow create, delete: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid &&
+        request.resource.data.patientId == request.auth.uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;
       // El dentista solo puede cambiar el estado a COMPLETED.
       allow update: if request.auth != null &&
-        (request.auth.uid == uid ||
+        ((request.auth.uid == uid &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+            request.resource.data.status == "CANCELLED") ||
           (resource.data.dentistId == request.auth.uid &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
             request.resource.data.status == "COMPLETED"));
+    }
+
+    // Consulta de grupo utilizada por la agenda del dentista.
+    match /{path=**}/appointments/{appointmentId} {
+      allow read: if request.auth != null &&
+        resource.data.dentistId == request.auth.uid;
     }
   }
 }

@@ -3,6 +3,7 @@ package com.example.the_white_smile.ui.dentists
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -10,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.the_white_smile.R
 import com.example.the_white_smile.domain.Dentist
 import com.example.the_white_smile.util.DateFormats
+import com.example.the_white_smile.util.ProfilePhotoCodec
 import com.google.android.material.materialswitch.MaterialSwitch
 
 /** Adaptador de la lista de dentistas del administrador. */
@@ -31,6 +33,7 @@ class DentistAdapter(
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val tvName: TextView = itemView.findViewById(R.id.tvDentistName)
+        private val ivPhoto: ImageView = itemView.findViewById(R.id.ivDentistPhoto)
         private val tvSpecialty: TextView = itemView.findViewById(R.id.tvDentistSpecialty)
         private val tvEmail: TextView = itemView.findViewById(R.id.tvDentistEmail)
         private val tvSchedule: TextView = itemView.findViewById(R.id.tvDentistSchedule)
@@ -45,6 +48,8 @@ class DentistAdapter(
             val context = itemView.context
 
             tvName.text = dentist.displayName
+            ProfilePhotoCodec.decode(dentist.profilePhotoBase64)?.let(ivPhoto::setImageBitmap)
+                ?: ivPhoto.setImageResource(R.mipmap.ic_launcher)
             tvSpecialty.text = dentist.specialty
             tvEmail.text = dentist.email.orEmpty()
             tvSchedule.text = context.getString(

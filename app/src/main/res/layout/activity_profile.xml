@@ -38,7 +38,18 @@
                     android:layout_height="96dp"
                     android:layout_marginTop="16dp"
                     android:contentDescription="@string/app_name"
+                    android:background="@drawable/profile_avatar_background"
+                    android:clipToOutline="true"
+                    android:scaleType="centerCrop"
                     android:src="@mipmap/ic_launcher" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnChangeProfilePhoto"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_btn_add_photo"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/tvProfileName"

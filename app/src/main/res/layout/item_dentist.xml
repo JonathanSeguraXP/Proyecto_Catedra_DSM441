@@ -17,6 +17,16 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <ImageView
+            android:id="@+id/ivDentistPhoto"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:contentDescription="@string/profile_btn_add_photo"
+            android:background="@drawable/profile_avatar_background"
+            android:clipToOutline="true"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_launcher" />
+
         <TextView
             android:id="@+id/tvDentistName"
             android:layout_width="match_parent"

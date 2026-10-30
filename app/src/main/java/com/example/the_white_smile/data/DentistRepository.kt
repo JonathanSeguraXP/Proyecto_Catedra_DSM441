@@ -34,4 +34,8 @@ interface DentistRepository {
         startMinute: Int,
         endMinute: Int
     ): Result<Unit>
+
+    /** Guarda una miniatura comprimida en el perfil publico del dentista. */
+    suspend fun updateProfilePhoto(dentistId: String, photoBase64: String): Result<Unit> =
+        Result.failure(UnsupportedOperationException("No se puede actualizar la foto"))
 }

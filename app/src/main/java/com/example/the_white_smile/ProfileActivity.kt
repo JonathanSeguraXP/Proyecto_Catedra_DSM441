@@ -3,8 +3,11 @@ package com.example.the_white_smile
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -15,10 +18,15 @@ import com.example.the_white_smile.ui.profile.ProfileEvent
 import com.example.the_white_smile.ui.profile.ProfileUiState
 import com.example.the_white_smile.ui.profile.ProfileViewModel
 import com.example.the_white_smile.util.FirebaseErrors
+import com.example.the_white_smile.util.FirestoreErrors
+import com.example.the_white_smile.util.ProfilePhotoCodec
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Pantalla de perfil.
@@ -31,20 +39,27 @@ class ProfileActivity : BaseActivity() {
     private lateinit var tvProfileName: TextView
     private lateinit var tvProfileEmail: TextView
     private lateinit var tvProfileSpecialty: TextView
+    private lateinit var ivProfileLogo: ImageView
+    private lateinit var btnChangeProfilePhoto: MaterialButton
     private lateinit var tvEmailStatus: TextView
     private lateinit var btnVerifyEmail: MaterialButton
     private lateinit var etProfileName: TextInputEditText
     private lateinit var layoutLoading: View
     private lateinit var tvLoading: TextView
+    private lateinit var profilePhotoPicker: ActivityResultLauncher<String>
 
     /** Evita sobrescribir lo que el usuario esta escribiendo. */
     private var lastRenderedName: String? = null
+    private var lastRenderedPhoto: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
         setupToolbar()
+        profilePhotoPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) encodeAndSavePhoto(uri)
+        }
         bindViews()
         setupListeners()
         observeViewModel()
@@ -79,6 +94,8 @@ class ProfileActivity : BaseActivity() {
         tvProfileName = findViewById(R.id.tvProfileName)
         tvProfileEmail = findViewById(R.id.tvProfileEmail)
         tvProfileSpecialty = findViewById(R.id.tvProfileSpecialty)
+        ivProfileLogo = findViewById(R.id.ivProfileLogo)
+        btnChangeProfilePhoto = findViewById(R.id.btnChangeProfilePhoto)
         tvEmailStatus = findViewById(R.id.tvEmailStatus)
         btnVerifyEmail = findViewById(R.id.btnVerifyEmail)
         etProfileName = findViewById(R.id.etProfileName)
@@ -94,6 +111,7 @@ class ProfileActivity : BaseActivity() {
         findViewById<MaterialButton>(R.id.btnChangePassword).setOnClickListener {
             viewModel.sendPasswordReset()
         }
+        btnChangeProfilePhoto.setOnClickListener { profilePhotoPicker.launch("image/*") }
     }
 
     private fun observeViewModel() {
@@ -111,6 +129,20 @@ class ProfileActivity : BaseActivity() {
         tvProfileSpecialty.visibility = if (state.specialty.isNullOrBlank()) View.GONE else View.VISIBLE
         if (!state.specialty.isNullOrBlank()) {
             tvProfileSpecialty.text = getString(R.string.profile_specialty, state.specialty)
+        }
+        btnChangeProfilePhoto.visibility = if (state.isDentist) View.VISIBLE else View.GONE
+        btnChangeProfilePhoto.setText(
+            if (state.profilePhotoBase64.isNullOrBlank()) {
+                R.string.profile_btn_add_photo
+            } else {
+                R.string.profile_btn_change_photo
+            }
+        )
+        if (lastRenderedPhoto != state.profilePhotoBase64) {
+            lastRenderedPhoto = state.profilePhotoBase64
+            val bitmap = ProfilePhotoCodec.decode(state.profilePhotoBase64)
+            if (bitmap == null) ivProfileLogo.setImageResource(R.mipmap.ic_launcher)
+            else ivProfileLogo.setImageBitmap(bitmap)
         }
 
         // Solo se escribe el campo cuando el nombre cambia desde el ViewModel.
@@ -145,8 +177,26 @@ class ProfileActivity : BaseActivity() {
             is ProfileEvent.Message -> toastShort(event.messageRes)
             is ProfileEvent.Error -> {
                 if (!event.cause.isUserCancelled()) {
-                    toastLong(FirebaseErrors.message(this, event.cause))
+                    val message = if (event.cause is FirebaseFirestoreException) {
+                        FirestoreErrors.message(this, event.cause)
+                    } else {
+                        FirebaseErrors.message(this, event.cause)
+                    }
+                    toastLong(message)
                 }
+            }
+        }
+    }
+
+    private fun encodeAndSavePhoto(uri: android.net.Uri) {
+        lifecycleScope.launch {
+            try {
+                val encoded = withContext(Dispatchers.IO) {
+                    ProfilePhotoCodec.encode(contentResolver, uri)
+                }
+                viewModel.saveProfilePhoto(encoded)
+            } catch (_: Exception) {
+                toastShort(R.string.profile_photo_read_error)
             }
         }
     }
