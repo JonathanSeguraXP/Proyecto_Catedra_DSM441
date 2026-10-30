@@ -75,4 +75,8 @@ interface AppointmentRepository {
      * Solo el dentista asignado puede hacerlo y la cita debe tener paciente.
      */
     suspend fun completeAppointment(appointment: Appointment): Result<Unit>
+
+    /** Guarda una sugerencia clínica del dentista asignado para compartirla con el paciente. */
+    suspend fun updateDentistSuggestion(appointment: Appointment, suggestion: String): Result<Unit> =
+        Result.failure(UnsupportedOperationException("Edición no disponible"))
 }

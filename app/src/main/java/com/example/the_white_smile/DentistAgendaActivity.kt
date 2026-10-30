@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.material.textfield.TextInputEditText
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.Lifecycle
@@ -76,7 +77,7 @@ class DentistAgendaActivity : BaseActivity() {
     }
 
     private fun setupList() {
-        adapter = DentistAgendaAdapter(::confirmComplete)
+        adapter = DentistAgendaAdapter(::confirmComplete, ::editSuggestion)
         rvAgenda.adapter = adapter
     }
 
@@ -113,6 +114,24 @@ class DentistAgendaActivity : BaseActivity() {
                 viewModel.completeAppointment(appointment)
             }
             .setNegativeButton(R.string.exit_cancel, null)
+            .show()
+    }
+
+    private fun editSuggestion(appointment: Appointment) {
+        val input = TextInputEditText(this).apply {
+            hint = getString(R.string.agenda_suggestion_hint)
+            setText(appointment.dentistSuggestion.orEmpty())
+            minLines = 3
+            maxLines = 6
+            setPadding(48, 24, 48, 0)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.agenda_suggestion)
+            .setView(input)
+            .setNegativeButton(R.string.exit_cancel, null)
+            .setPositiveButton(R.string.save_changes) { _, _ ->
+                viewModel.saveSuggestion(appointment, input.text?.toString().orEmpty())
+            }
             .show()
     }
 

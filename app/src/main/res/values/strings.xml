@@ -60,7 +60,7 @@
     <string name="menu_option_agenda">Agenda</string>
     <string name="menu_option_contact">Contacto</string>
     <string name="menu_option_help">Ayuda</string>
-    <string name="menu_option_dentists">Dentistas</string>
+    <string name="menu_option_dentists">Gestionar dentistas</string>
     <string name="menu_coming_soon">Próximamente disponible</string>
 
     <!-- Perfil -->
@@ -229,6 +229,21 @@
     <string name="treatment_section_description">Descripción</string>
     <string name="treatment_section_recommendations">Recomendaciones</string>
     <string name="treatments_not_found">No se encontró el tratamiento</string>
+    <string name="treatment_edit">Editar tratamiento</string>
+    <string name="treatment_saved">Tratamiento actualizado</string>
+    <string name="treatment_edit_name">Nombre</string>
+    <string name="treatment_edit_summary">Resumen</string>
+    <string name="treatment_edit_description">Descripción</string>
+    <string name="treatment_edit_duration">Duración en minutos</string>
+    <string name="treatment_edit_recommendations">Recomendaciones (una por línea)</string>
+    <string name="treatment_edit_price">Precio en dólares</string>
+    <string name="agenda_suggestion">Sugerencia del dentista: %1$s</string>
+    <string name="agenda_suggestion_action">Añadir sugerencia</string>
+    <string name="agenda_suggestion_edit">Editar sugerencia</string>
+    <string name="save_changes">Guardar</string>
+    <string name="agenda_suggestion_saved">Sugerencia guardada</string>
+    <string name="agenda_suggestion_hint">Escribe una recomendación para el paciente</string>
+    <string name="error_generic">No se pudo guardar. Inténtalo de nuevo.</string>
 
     <!-- Dentistas (administrador) -->
     <string name="dentists_title">Dentistas</string>

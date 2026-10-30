@@ -9,7 +9,7 @@ import com.example.the_white_smile.data.FirebaseDentistAccountCreator
 import com.example.the_white_smile.data.FirestoreAppointmentRepository
 import com.example.the_white_smile.data.FirestoreDentistRepository
 import com.example.the_white_smile.data.FirestoreUserRepository
-import com.example.the_white_smile.data.LocalTreatmentRepository
+import com.example.the_white_smile.data.FirestoreTreatmentRepository
 import com.example.the_white_smile.data.TreatmentRepository
 import com.example.the_white_smile.data.TreatmentPricingRepository
 import com.example.the_white_smile.data.FirestoreTreatmentPricingRepository
@@ -33,7 +33,9 @@ object ServiceLocator {
         FirestoreAppointmentRepository(firestore, auth)
     }
 
-    val treatmentRepository: TreatmentRepository by lazy { LocalTreatmentRepository }
+    val treatmentRepository: TreatmentRepository by lazy {
+        FirestoreTreatmentRepository(firestore)
+    }
 
     val treatmentPricingRepository: TreatmentPricingRepository by lazy {
         FirestoreTreatmentPricingRepository(firestore)

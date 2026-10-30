@@ -47,7 +47,8 @@ class AppointmentsViewModel(
     private val pricingRepository: TreatmentPricingRepository? = null
 ) : ViewModel() {
 
-    private val baseTreatments = treatmentRepository.getTreatments()
+    private var baseTreatments = treatmentRepository.getTreatments()
+    private var treatmentPrices: Map<String, Long> = emptyMap()
     private val _uiState = MutableStateFlow(
         AppointmentsUiState(treatments = baseTreatments)
     )
@@ -62,6 +63,14 @@ class AppointmentsViewModel(
     init {
         observeAppointments()
         observeDentists()
+        viewModelScope.launch {
+            treatmentRepository.observeCatalog()
+                .catch { _events.emit(AppointmentsEvent.Error(it)) }
+                .collect { catalog ->
+                    baseTreatments = catalog
+                    refreshTreatments()
+                }
+        }
         observeTreatmentPrices()
     }
 
@@ -71,16 +80,17 @@ class AppointmentsViewModel(
             pricing.observePrices()
                 .catch { _events.emit(AppointmentsEvent.Error(it)) }
                 .collect { prices ->
-                    _uiState.update { state ->
-                        state.copy(
-                            treatments = baseTreatments.map { treatment ->
-                                treatment.copy(
-                                    priceCents = prices[treatment.id] ?: treatment.priceCents
-                                )
-                            }
-                        )
-                    }
+                    treatmentPrices = prices
+                    refreshTreatments()
                 }
+        }
+    }
+
+    private fun refreshTreatments() {
+        _uiState.update { state ->
+            state.copy(treatments = baseTreatments.map { treatment ->
+                treatment.copy(priceCents = treatmentPrices[treatment.id] ?: treatment.priceCents)
+            })
         }
     }
 

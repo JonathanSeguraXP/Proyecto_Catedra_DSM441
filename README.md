@@ -125,7 +125,8 @@ implementación de datos sin modificar la interfaz de usuario.
   de un solo campo con ámbito de grupo de colecciones para `appointments.dentistId`
   (ver configuración).
 - El dentista puede marcar como completada una cita pendiente cuya hora ya pasó. La
-  acción pide confirmación y solo actualiza el campo `status` de la cita.
+  acción pide confirmación. También puede añadir o editar una sugerencia que aparece
+  al paciente en su lista de citas.
 - Las citas futuras no muestran el botón de completar y el ViewModel vuelve a validar
   la fecha antes de llamar a Firestore.
 - Las citas creadas antes de esta versión no tienen `patientId`, por lo que no se pueden
@@ -361,12 +362,15 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    gestiona perfiles y horarios de dentistas; cada dentista solo puede actualizar su foto.
    Las citas
    siguen limitadas al usuario dueño del documento, pero el dentista asignado también
-   puede leerlas y marcar su estado como `COMPLETED`. Los dentistas son visibles para
+   puede leerlas, marcar su estado como `COMPLETED` y guardar una sugerencia visible al
+   paciente. Los dentistas son visibles para
    todos los usuarios autenticados; solo el administrador puede modificar sus datos de
    trabajo y cada dentista puede actualizar únicamente `profilePhotoBase64`.
    Las fotos de perfil de pacientes y dentistas se guardan como miniaturas JPEG
    comprimidas en Firestore; no requieren Cloud Storage. Los precios se guardan en
-   `treatmentPrices/{treatmentId}` y solo el administrador puede modificarlos.
+   `treatmentPrices/{treatmentId}` y solo el administrador puede modificarlos. Los
+   cambios del catálogo se guardan en `treatments/{treatmentId}`; solo el administrador
+   puede modificarlos. Publica las reglas incluidas abajo para habilitar estas acciones.
    El catálogo incluye precios referenciales desde, basados en tarifas publicadas en
    El Salvador; administración puede ajustarlos desde el panel. El costo final de los
    tratamientos variables se confirma tras la evaluación clínica. Al reservar, el
@@ -433,6 +437,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /treatments/{treatmentId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
     match /users/{uid}/appointments/{appointmentId} {
       // El paciente ve sus citas y el dentista ve las que tiene asignadas.
       allow read: if request.auth != null &&
@@ -440,14 +449,18 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == uid &&
         request.resource.data.patientId == request.auth.uid;
       allow delete: if request.auth != null && request.auth.uid == uid;
-      // El dentista solo puede cambiar el estado a COMPLETED.
+      // El dentista asignado puede completar la cita o guardar una sugerencia para el paciente.
       allow update: if request.auth != null &&
         ((request.auth.uid == uid &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
             request.resource.data.status == "CANCELLED") ||
           (resource.data.dentistId == request.auth.uid &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
-            request.resource.data.status == "COMPLETED"));
+            request.resource.data.status == "COMPLETED") ||
+          (resource.data.dentistId == request.auth.uid &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dentistSuggestion']) &&
+            request.resource.data.dentistSuggestion is string &&
+            request.resource.data.dentistSuggestion.size() <= 2000));
     }
 
     // Consulta de grupo utilizada por la agenda del dentista.

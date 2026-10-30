@@ -53,6 +53,15 @@
             tools:text="Duración: 30 min" />
 
         <TextView
+            android:id="@+id/tvAgendaSuggestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:visibility="gone"
+            tools:text="Sugerencia del dentista: Mantén la zona limpia." />
+
+        <TextView
             android:id="@+id/tvAgendaDeposit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -78,6 +87,13 @@
                 android:textAppearance="?attr/textAppearanceLabelLarge"
                 android:textStyle="bold"
                 tools:text="Pendiente" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSuggestAppointment"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/agenda_suggestion_action" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCompleteAppointment"

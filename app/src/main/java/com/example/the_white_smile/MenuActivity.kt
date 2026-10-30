@@ -215,14 +215,14 @@ class MenuActivity : BaseActivity() {
         )
         UserRole.ADMIN -> listOf(
             MenuOption(
-                R.string.menu_option_prices,
-                android.R.drawable.ic_menu_edit,
-                TreatmentPricesActivity::class.java
-            ),
-            MenuOption(
                 R.string.menu_option_dentists,
                 android.R.drawable.ic_menu_manage,
                 DentistsActivity::class.java
+            ),
+            MenuOption(
+                R.string.menu_option_prices,
+                android.R.drawable.ic_menu_edit,
+                TreatmentPricesActivity::class.java
             ),
             MenuOption(
                 R.string.menu_option_treatments,

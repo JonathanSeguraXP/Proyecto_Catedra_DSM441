@@ -130,6 +130,14 @@
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 tools:text="• Se recomienda realizarla cada seis meses." />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEditTreatment"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/treatment_edit"
+                        android:visibility="gone" />
+
         </LinearLayout>
     </ScrollView>
 

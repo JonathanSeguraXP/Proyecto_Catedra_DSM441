@@ -24,7 +24,8 @@ data class Appointment(
     val totalPriceCents: Long? = null,
     val depositCents: Long? = null,
     val depositPercent: Int? = null,
-    val depositStatus: DepositStatus? = null
+    val depositStatus: DepositStatus? = null,
+    val dentistSuggestion: String? = null
 ) {
     companion object {
         /** Duracion asumida para citas creadas antes de esta version. */

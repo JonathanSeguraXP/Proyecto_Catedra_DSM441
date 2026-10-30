@@ -237,6 +237,22 @@ class FirestoreAppointmentRepository(
         Unit
     }
 
+    override suspend fun updateDentistSuggestion(
+        appointment: Appointment,
+        suggestion: String
+    ): Result<Unit> = runData {
+        val uid = requireUid()
+        val patientId = appointment.patientId
+            ?: throw IllegalStateException("La cita no tiene un paciente asociado")
+        if (appointment.dentistId != uid) {
+            throw IllegalStateException("La cita no pertenece al dentista actual")
+        }
+        appointmentsRef(patientId).document(appointment.id)
+            .update(FIELD_DENTIST_SUGGESTION, suggestion.trim())
+            .awaitResult()
+        Unit
+    }
+
     private fun appointmentsRef(uid: String) =
         firestore.collection(USERS).document(uid).collection(APPOINTMENTS)
 
@@ -266,7 +282,8 @@ class FirestoreAppointmentRepository(
             depositPercent = getLong(FIELD_DEPOSIT_PERCENT)?.toInt(),
             depositStatus = com.example.the_white_smile.domain.DepositStatus.from(
                 getString(FIELD_DEPOSIT_STATUS)
-            )
+            ),
+            dentistSuggestion = getString(FIELD_DENTIST_SUGGESTION)
         )
     }
 
@@ -300,5 +317,6 @@ class FirestoreAppointmentRepository(
         const val FIELD_DEPOSIT_STATUS = "depositStatus"
         const val DEPOSIT_PENDING = "PENDING"
         const val FIELD_CREATED_AT = "createdAt"
+        const val FIELD_DENTIST_SUGGESTION = "dentistSuggestion"
     }
 }

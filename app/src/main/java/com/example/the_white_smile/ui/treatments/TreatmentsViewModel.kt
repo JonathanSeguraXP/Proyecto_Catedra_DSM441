@@ -27,13 +27,20 @@ class TreatmentsViewModel(
     val uiState: StateFlow<TreatmentsUiState> = _uiState.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            repository.observeCatalog()
+                .catch { }
+                .collect { treatments ->
+                    _uiState.value = TreatmentsUiState(treatments)
+                }
+        }
         pricingRepository?.let { pricing ->
             viewModelScope.launch {
                 pricing.observePrices()
                     .catch { }
                     .collect { prices ->
                         _uiState.value = TreatmentsUiState(
-                            catalog.map { treatment ->
+                            _uiState.value.treatments.ifEmpty { catalog }.map { treatment ->
                                 treatment.copy(priceCents = prices[treatment.id] ?: treatment.priceCents)
                             }
                         )

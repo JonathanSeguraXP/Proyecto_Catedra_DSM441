@@ -76,6 +76,20 @@ class DentistAgendaViewModel(
         }
     }
 
+    fun saveSuggestion(appointment: Appointment, suggestion: String) {
+        if (appointment.dentistId != authRepository.currentUser?.uid) return
+        if (appointment.patientId == null) {
+            notify(R.string.agenda_error_legacy)
+            return
+        }
+        if (!isOnline()) return
+        runOperation(R.string.loading_complete_appointment) {
+            repository.updateDentistSuggestion(appointment, suggestion)
+                .onSuccess { notify(R.string.agenda_suggestion_saved) }
+                .onFailure { _events.emit(DentistAgendaEvent.Error(it)) }
+        }
+    }
+
     private fun observeAgenda() {
         val dentistId = authRepository.currentUser?.uid
         if (dentistId == null) {
