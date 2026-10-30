@@ -18,10 +18,13 @@ import com.example.the_white_smile.ui.treatments.TreatmentDetailUiState
 import com.example.the_white_smile.ui.treatments.TreatmentDetailViewModel
 import com.example.the_white_smile.util.MoneyFormats
 import com.example.the_white_smile.util.ProfilePhotoCodec
+import com.example.the_white_smile.util.FirebaseErrors
+import com.example.the_white_smile.util.FirestoreErrors
 import com.example.the_white_smile.domain.Treatment
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -129,7 +132,14 @@ class TreatmentDetailActivity : BaseActivity() {
                 val treatment = viewModel.uiState.value.treatment ?: return@launch
                 viewModel.save(treatment.copy(profilePhotoBase64 = encoded))
                     .onSuccess { Toast.makeText(this@TreatmentDetailActivity, R.string.treatment_photo_saved, Toast.LENGTH_SHORT).show() }
-                    .onFailure { Toast.makeText(this@TreatmentDetailActivity, R.string.error_generic, Toast.LENGTH_LONG).show() }
+                    .onFailure { error ->
+                        val message = if (error is FirebaseFirestoreException) {
+                            FirestoreErrors.message(this@TreatmentDetailActivity, error)
+                        } else {
+                            FirebaseErrors.message(this@TreatmentDetailActivity, error)
+                        }
+                        Toast.makeText(this@TreatmentDetailActivity, message, Toast.LENGTH_LONG).show()
+                    }
             } catch (_: Exception) {
                 Toast.makeText(this@TreatmentDetailActivity, R.string.profile_photo_read_error, Toast.LENGTH_SHORT).show()
             }
