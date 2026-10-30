@@ -369,8 +369,11 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
    Las fotos de perfil de pacientes y dentistas se guardan como miniaturas JPEG
    comprimidas en Firestore; no requieren Cloud Storage. Los precios se guardan en
    `treatmentPrices/{treatmentId}` y solo el administrador puede modificarlos. Los
-   cambios del catálogo se guardan en `treatments/{treatmentId}`; solo el administrador
-   puede modificarlos. Publica las reglas incluidas abajo para habilitar estas acciones.
+   cambios del catálogo e íconos individuales se guardan en `treatments/{treatmentId}`;
+   solo el administrador puede modificarlos o eliminar un tratamiento del catálogo.
+   Las imágenes de los tratamientos y perfiles se comprimen en
+   miniaturas JPEG y se guardan como Base64 en Firestore. Publica las reglas incluidas
+   abajo para habilitar estas acciones.
    El catálogo incluye precios referenciales desde, basados en tarifas publicadas en
    El Salvador; administración puede ajustarlos desde el panel. El costo final de los
    tratamientos variables se confirma tras la evaluación clínica. Al reservar, el

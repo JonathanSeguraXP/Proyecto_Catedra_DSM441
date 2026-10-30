@@ -25,9 +25,12 @@ class FirestoreTreatmentRepository(
                 close(error)
                 return@addSnapshotListener
             }
-            val overrides = snapshot?.documents.orEmpty().mapNotNull { it.toTreatment() }
-                .associateBy { it.id }
-            trySend(defaults.getTreatments().map { overrides[it.id] ?: it })
+            val documents = snapshot?.documents.orEmpty()
+            val overrides = documents.mapNotNull { it.toTreatment() }.associateBy { it.id }
+            val deletedIds = documents.filter { it.getBoolean("deleted") == true }
+                .map { it.id }.toSet()
+            trySend(defaults.getTreatments().filterNot { it.id in deletedIds }
+                .map { overrides[it.id] ?: it })
         }
         awaitClose { registration.remove() }
     }
@@ -39,7 +42,9 @@ class FirestoreTreatmentRepository(
             "description" to treatment.description,
             "durationMinutes" to treatment.durationMinutes,
             "recommendations" to treatment.recommendations,
-            "priceCents" to treatment.priceCents
+            "priceCents" to treatment.priceCents,
+            "profilePhotoBase64" to treatment.profilePhotoBase64,
+            "deleted" to false
         )
         firestore.collection(COLLECTION).document(treatment.id).set(data).awaitResult()
         Result.success(Unit)
@@ -49,7 +54,18 @@ class FirestoreTreatmentRepository(
         Result.failure(error)
     }
 
+    override suspend fun deleteTreatment(treatmentId: String): Result<Unit> = try {
+        firestore.collection(COLLECTION).document(treatmentId)
+            .set(mapOf("deleted" to true)).awaitResult()
+        Result.success(Unit)
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        Result.failure(error)
+    }
+
     private fun DocumentSnapshot.toTreatment(): Treatment? {
+        if (getBoolean("deleted") == true) return null
         val base = defaults.getTreatment(id) ?: return null
         return base.copy(
             name = getString("name") ?: base.name,
@@ -57,7 +73,8 @@ class FirestoreTreatmentRepository(
             description = getString("description") ?: base.description,
             durationMinutes = getLong("durationMinutes")?.toInt() ?: base.durationMinutes,
             recommendations = get("recommendations") as? List<String> ?: base.recommendations,
-            priceCents = getLong("priceCents") ?: base.priceCents
+            priceCents = getLong("priceCents") ?: base.priceCents,
+            profilePhotoBase64 = getString("profilePhotoBase64") ?: base.profilePhotoBase64
         )
     }
 

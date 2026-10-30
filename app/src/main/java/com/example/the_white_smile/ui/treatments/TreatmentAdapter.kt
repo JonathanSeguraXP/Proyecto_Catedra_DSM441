@@ -4,11 +4,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.the_white_smile.R
 import com.example.the_white_smile.domain.Treatment
+import com.example.the_white_smile.util.ProfilePhotoCodec
 
 /** Adaptador del catalogo de tratamientos. */
 class TreatmentAdapter(
@@ -31,9 +33,12 @@ class TreatmentAdapter(
         private val tvSummary: TextView = itemView.findViewById(R.id.tvTreatmentSummary)
         private val tvDuration: TextView = itemView.findViewById(R.id.tvTreatmentDuration)
         private val tvPrice: TextView = itemView.findViewById(R.id.tvTreatmentPrice)
+        private val ivPhoto: ImageView = itemView.findViewById(R.id.ivTreatmentPhoto)
 
         fun bind(treatment: Treatment, onClick: (Treatment) -> Unit) {
             tvName.text = treatment.name
+            ProfilePhotoCodec.decode(treatment.profilePhotoBase64)?.let(ivPhoto::setImageBitmap)
+                ?: ivPhoto.setImageResource(android.R.drawable.ic_menu_agenda)
             tvSummary.text = treatment.summary
             tvDuration.text = itemView.context.getString(
                 R.string.treatments_duration_short,

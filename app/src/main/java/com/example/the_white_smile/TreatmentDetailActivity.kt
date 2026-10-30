@@ -1,11 +1,15 @@
 package com.example.the_white_smile
 
 import android.os.Bundle
+import android.net.Uri
 import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -13,17 +17,22 @@ import androidx.appcompat.app.AlertDialog
 import com.example.the_white_smile.ui.treatments.TreatmentDetailUiState
 import com.example.the_white_smile.ui.treatments.TreatmentDetailViewModel
 import com.example.the_white_smile.util.MoneyFormats
+import com.example.the_white_smile.util.ProfilePhotoCodec
 import com.example.the_white_smile.domain.Treatment
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Pantalla de detalle de un tratamiento.
  * El tratamiento se busca por su identificador en [TreatmentDetailViewModel].
  */
 class TreatmentDetailActivity : BaseActivity() {
+
+    private lateinit var treatmentPhotoPicker: ActivityResultLauncher<String>
 
     private val treatmentId: String by lazy {
         intent.getStringExtra(EXTRA_TREATMENT_ID).orEmpty()
@@ -36,6 +45,10 @@ class TreatmentDetailActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_treatment_detail)
+
+        treatmentPhotoPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) encodeAndSaveTreatmentPhoto(uri)
+        }
 
         setupToolbar()
 
@@ -89,6 +102,64 @@ class TreatmentDetailActivity : BaseActivity() {
         findViewById<View>(R.id.btnEditTreatment).visibility =
             if (state.isAdmin) View.VISIBLE else View.GONE
         findViewById<View>(R.id.btnEditTreatment).setOnClickListener { showEditDialog(treatment) }
+        findViewById<View>(R.id.btnDeleteTreatment).apply {
+            visibility = if (state.isAdmin) View.VISIBLE else View.GONE
+            setOnClickListener { confirmDeleteTreatment(treatment.id) }
+        }
+        val photoView = findViewById<ImageView>(R.id.ivTreatmentPhoto)
+        val photo = ProfilePhotoCodec.decode(treatment.profilePhotoBase64)
+        if (photo == null) photoView.setImageResource(android.R.drawable.ic_menu_agenda)
+        else photoView.setImageBitmap(photo)
+        findViewById<View>(R.id.btnChangeTreatmentPhoto).apply {
+            visibility = if (state.isAdmin) View.VISIBLE else View.GONE
+            (this as? com.google.android.material.button.MaterialButton)?.setText(
+                if (treatment.profilePhotoBase64.isNullOrBlank()) R.string.treatment_photo_add
+                else R.string.treatment_photo_change
+            )
+            setOnClickListener { treatmentPhotoPicker.launch("image/*") }
+        }
+    }
+
+    private fun encodeAndSaveTreatmentPhoto(uri: Uri) {
+        lifecycleScope.launch {
+            try {
+                val encoded = withContext(Dispatchers.IO) {
+                    ProfilePhotoCodec.encode(contentResolver, uri)
+                }
+                val treatment = viewModel.uiState.value.treatment ?: return@launch
+                viewModel.save(treatment.copy(profilePhotoBase64 = encoded))
+                    .onSuccess { Toast.makeText(this@TreatmentDetailActivity, R.string.treatment_photo_saved, Toast.LENGTH_SHORT).show() }
+                    .onFailure { Toast.makeText(this@TreatmentDetailActivity, R.string.error_generic, Toast.LENGTH_LONG).show() }
+            } catch (_: Exception) {
+                Toast.makeText(this@TreatmentDetailActivity, R.string.profile_photo_read_error, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun confirmDeleteTreatment(id: String) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.treatment_delete_confirm_title)
+            .setMessage(R.string.treatment_delete_confirm_message)
+            .setNegativeButton(R.string.exit_cancel, null)
+            .setPositiveButton(R.string.treatment_delete) { _, _ ->
+                lifecycleScope.launch {
+                    viewModel.delete(id).onSuccess {
+                        Toast.makeText(
+                            this@TreatmentDetailActivity,
+                            R.string.treatment_deleted,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
+                    }.onFailure {
+                        Toast.makeText(
+                            this@TreatmentDetailActivity,
+                            R.string.error_generic,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .show()
     }
 
     private fun showEditDialog(treatment: Treatment) {

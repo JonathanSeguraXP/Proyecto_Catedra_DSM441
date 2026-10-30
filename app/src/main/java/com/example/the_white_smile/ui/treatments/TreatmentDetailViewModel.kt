@@ -47,6 +47,9 @@ class TreatmentDetailViewModel(
         return Result.success(Unit)
     }
 
+    suspend fun delete(treatmentId: String): Result<Unit> =
+        repository.deleteTreatment(treatmentId)
+
     init {
         if (baseTreatment != null) {
             viewModelScope.launch {

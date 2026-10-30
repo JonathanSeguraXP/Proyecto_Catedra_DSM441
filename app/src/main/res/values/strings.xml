@@ -244,6 +244,14 @@
     <string name="agenda_suggestion_saved">Sugerencia guardada</string>
     <string name="agenda_suggestion_hint">Escribe una recomendación para el paciente</string>
     <string name="error_generic">No se pudo guardar. Inténtalo de nuevo.</string>
+    <string name="treatment_photo_add">Agregar ícono</string>
+    <string name="treatment_photo_change">Cambiar ícono</string>
+    <string name="treatment_photo_description">Imagen del tratamiento</string>
+    <string name="treatment_photo_saved">Ícono del tratamiento guardado</string>
+    <string name="treatment_delete">Eliminar tratamiento</string>
+    <string name="treatment_delete_confirm_title">¿Eliminar este tratamiento?</string>
+    <string name="treatment_delete_confirm_message">Ya no aparecerá en el catálogo ni se podrá elegir al agendar una cita.</string>
+    <string name="treatment_deleted">Tratamiento eliminado</string>
 
     <!-- Dentistas (administrador) -->
     <string name="dentists_title">Dentistas</string>

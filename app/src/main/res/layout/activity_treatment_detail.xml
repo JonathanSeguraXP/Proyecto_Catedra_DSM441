@@ -43,6 +43,34 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
+                    <ImageView
+                        android:id="@+id/ivTreatmentPhoto"
+                        android:layout_width="112dp"
+                        android:layout_height="112dp"
+                        android:layout_gravity="center_horizontal"
+                        android:contentDescription="@string/treatment_photo_description"
+                        android:scaleType="centerCrop"
+                        android:src="@android:drawable/ic_menu_agenda" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnChangeTreatmentPhoto"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="@string/treatment_photo_add"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDeleteTreatment"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="@string/treatment_delete"
+                        android:textColor="?attr/colorError"
+                        android:visibility="gone" />
+
                     <TextView
                         android:id="@+id/tvTreatmentName"
                         android:layout_width="match_parent"

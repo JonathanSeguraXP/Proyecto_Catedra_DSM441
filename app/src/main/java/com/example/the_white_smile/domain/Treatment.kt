@@ -12,5 +12,6 @@ data class Treatment(
     val durationMinutes: Int,
     val recommendations: List<String>,
     /** Precio total en centavos de dolar; null significa que administracion debe configurarlo. */
-    val priceCents: Long? = null
+    val priceCents: Long? = null,
+    val profilePhotoBase64: String? = null
 )

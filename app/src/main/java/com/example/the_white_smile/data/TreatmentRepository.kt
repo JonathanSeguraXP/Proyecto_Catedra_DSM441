@@ -19,4 +19,7 @@ interface TreatmentRepository {
 
     suspend fun saveTreatment(treatment: Treatment): Result<Unit> =
         Result.failure(UnsupportedOperationException("Edición no disponible"))
+
+    suspend fun deleteTreatment(treatmentId: String): Result<Unit> =
+        Result.failure(UnsupportedOperationException("Eliminación no disponible"))
 }

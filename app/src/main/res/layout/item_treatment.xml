@@ -22,11 +22,12 @@
         android:padding="16dp">
 
         <ImageView
+            android:id="@+id/ivTreatmentPhoto"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:importantForAccessibility="no"
             android:src="@android:drawable/ic_menu_agenda"
-            app:tint="?attr/colorPrimary" />
+            android:scaleType="centerCrop" />
 
         <LinearLayout
             android:layout_width="0dp"
