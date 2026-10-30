@@ -196,7 +196,136 @@ class DentistsViewModelTest {
         assertEquals("Dra. Ana", repository.lastName)
         assertEquals("ana@correo.com", repository.lastEmail)
         assertEquals("Ortodoncia", repository.lastSpecialty)
+        assertEquals(Dentist.DEFAULT_WORK_DAYS, repository.lastWorkDays)
+        assertEquals(Dentist.DEFAULT_START_MINUTE, repository.lastStartMinute)
+        assertEquals(Dentist.DEFAULT_END_MINUTE, repository.lastEndMinute)
         assertEquals(listOf(DentistsEvent.Created("Dra. Ana")), events)
+        assertFalse(viewModel.uiState.value.isCreating)
+    }
+
+    @Test
+    fun `una cuenta sin dias de atencion avisa y no crea la cuenta`() = runTest {
+        val viewModel = createViewModel()
+        val events = collectEvents(viewModel)
+
+        viewModel.createDentist(
+            "Dra. Ana",
+            "Ortodoncia",
+            "ana@correo.com",
+            "secreto1",
+            workDays = emptySet()
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(DentistsEvent.Message(R.string.dentists_error_work_days)),
+            events
+        )
+        assertEquals(0, repository.createCalls)
+    }
+
+    @Test
+    fun `un horario fuera de bloques de 15 minutos avisa`() = runTest {
+        val viewModel = createViewModel()
+        val events = collectEvents(viewModel)
+
+        viewModel.createDentist(
+            "Dra. Ana",
+            "Ortodoncia",
+            "ana@correo.com",
+            "secreto1",
+            startMinute = 8 * 60 + 10
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(DentistsEvent.Message(R.string.dentists_error_schedule_alignment)),
+            events
+        )
+        assertEquals(0, repository.createCalls)
+    }
+
+    @Test
+    fun `un rango de atencion invalido avisa`() = runTest {
+        val viewModel = createViewModel()
+        val events = collectEvents(viewModel)
+
+        viewModel.createDentist(
+            "Dra. Ana",
+            "Ortodoncia",
+            "ana@correo.com",
+            "secreto1",
+            startMinute = 17 * 60,
+            endMinute = 8 * 60
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(DentistsEvent.Message(R.string.dentists_error_schedule_range)),
+            events
+        )
+        assertEquals(0, repository.createCalls)
+    }
+
+    @Test
+    fun `actualizar el horario guarda los nuevos valores`() = runTest {
+        repository.dentists.value = listOf(dentist())
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        val events = collectEvents(viewModel)
+
+        viewModel.updateSchedule(
+            dentist = dentist(),
+            workDays = setOf(1, 3, 5),
+            startMinute = 9 * 60,
+            endMinute = 18 * 60
+        )
+        advanceUntilIdle()
+
+        assertEquals(1, repository.updateScheduleCalls)
+        assertEquals("d1", repository.lastScheduleId)
+        assertEquals(setOf(1, 3, 5), repository.lastScheduleWorkDays)
+        assertEquals(9 * 60, repository.lastScheduleStartMinute)
+        assertEquals(18 * 60, repository.lastScheduleEndMinute)
+        assertEquals(listOf(DentistsEvent.ScheduleUpdated("Dra. Ana Ramirez")), events)
+        assertFalse(viewModel.uiState.value.isCreating)
+    }
+
+    @Test
+    fun `un horario sin cambios no llama al repositorio`() = runTest {
+        repository.dentists.value = listOf(dentist())
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        val events = collectEvents(viewModel)
+
+        viewModel.updateSchedule(
+            dentist = dentist(),
+            workDays = dentist().workDays,
+            startMinute = dentist().startMinute,
+            endMinute = dentist().endMinute
+        )
+        advanceUntilIdle()
+
+        assertEquals(0, repository.updateScheduleCalls)
+        assertEquals(
+            listOf(DentistsEvent.Message(R.string.dentists_schedule_unchanged)),
+            events
+        )
+    }
+
+    @Test
+    fun `si falla la actualizacion del horario emite el error`() = runTest {
+        repository.dentists.value = listOf(dentist())
+        repository.updateScheduleResult = Result.failure(IllegalStateException("sin permisos"))
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        val events = collectEvents(viewModel)
+
+        viewModel.updateSchedule(dentist(), setOf(6), 9 * 60, 12 * 60)
+        advanceUntilIdle()
+
+        assertEquals(1, events.size)
+        assertTrue(events.single() is DentistsEvent.Error)
         assertFalse(viewModel.uiState.value.isCreating)
     }
 

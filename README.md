@@ -54,8 +54,7 @@ implementación de datos sin modificar la interfaz de usuario.
   - **Paciente:** Citas, Tratamientos, Perfil, Historial, Contacto y Ayuda.
   - **Dentista:** Tratamientos, Perfil, Contacto y Ayuda. En las siguientes etapas
     se agregará su agenda.
-  - **Administrador:** Tratamientos, Perfil, Contacto y Ayuda. En las siguientes
-    etapas se agregará la gestión de dentistas.
+  - **Administrador:** Tratamientos, Perfil, Contacto, Ayuda y Dentistas.
 - Si la lectura del perfil falla, la aplicación continúa como paciente en lugar de
   bloquear el acceso.
 - El administrador inicial se crea una sola vez de forma manual (ver configuración).
@@ -63,10 +62,14 @@ implementación de datos sin modificar la interfaz de usuario.
 ### Dentistas (administrador)
 
 - Pantalla exclusiva del administrador, accesible desde la opción Dentistas del menú.
-- Listado en tiempo real de los dentistas con nombre, especialidad, correo y estado.
-- Creación de la cuenta del dentista con nombre, especialidad, correo y contraseña
-  temporal. Incluye validaciones de campos vacíos, formato del correo, contraseña de
-  al menos 6 caracteres y conexión a internet.
+- Listado en tiempo real de los dentistas con nombre, especialidad, correo, horario y estado.
+- Creación de la cuenta del dentista con nombre, especialidad, correo, contraseña
+  temporal y horario de atención. Incluye validaciones de campos vacíos, formato del
+  correo, contraseña de al menos 6 caracteres, días de atención y conexión a internet.
+- El horario se define con los días de la semana y un rango de entrada y salida en
+  bloques de 15 minutos. Por defecto se ofrece de lunes a viernes, de 08:00 a 17:00.
+- Cada dentista de la lista muestra su horario y tiene un botón para editarlo sin
+  cambiar su cuenta.
 - La cuenta se crea con una **instancia secundaria de FirebaseApp**, de modo que el
   administrador no pierde su sesión. Al terminar, la sesión secundaria se cierra.
 - El perfil se guarda en `dentists/{uid}` y el rol `DENTIST` en `users/{uid}`. Si el
@@ -88,17 +91,24 @@ implementación de datos sin modificar la interfaz de usuario.
 ### Citas
 
 - Listado en tiempo real de las citas del usuario autenticado.
-- Registro de una nueva cita con dentista, servicio, fecha y hora, mediante selectores
-  nativos. Solo se ofrecen los dentistas activos.
-- Validaciones de dentista no seleccionado, servicio vacío, fecha anterior al momento
-  actual y solapamiento con otra cita pendiente del mismo usuario.
-- La cita guarda el identificador y el nombre del dentista, de modo que se muestran
-  aunque el dentista cambie de nombre o se desactive.
+- Registro de una nueva cita con dentista, tratamiento, fecha y hora. Solo se ofrecen
+  los dentistas activos y el tratamiento se elige del catálogo de la aplicación.
+- La duración real de cada tratamiento determina cuántos bloques de 15 minutos ocupa
+  la cita; por ejemplo, una limpieza de 30 minutos ocupa dos bloques.
+- La agenda se consulta en Firestore (`dentists/{dentista}/slots`) y el diálogo solo
+  muestra horas libres. Si otro paciente ocupa un bloque, la hora desaparece y, al
+  confirmar, la transacción vuelve a validar para evitar dobles reservas.
+- Validaciones de dentista o tratamiento no seleccionado, fecha anterior al momento
+  actual, horario fuera de la atención del dentista y solapamiento con otra cita
+  pendiente del mismo usuario.
+- La cita guarda el identificador y el nombre del dentista, el tratamiento y su
+  duración, de modo que la información se conserva aunque el catálogo cambie.
 - Cancelación de citas pendientes con confirmación previa; el registro se conserva con
-  estado `CANCELLED` en lugar de eliminarse.
+  estado `CANCELLED` y se liberan sus bloques de la agenda del dentista.
 - Estados de la cita: pendiente, cancelada y completada.
 - Persistencia en Cloud Firestore, bajo `users/{uid}/appointments`, de modo que cada
-  usuario solo accede a sus propios turnos.
+  usuario solo accede a sus propios turnos. Los bloques ocupados son visibles para
+  todos los usuarios autenticados, pero no exponen la cita completa de otros pacientes.
 
 ### Historial
 
@@ -209,16 +219,18 @@ app/src/main/java/com/example/the_white_smile/
     ConnectivityChecker.kt
     EmailValidator.kt
     Appointment.kt               # Modelo y estados de una cita
+    AppointmentSchedule.kt       # Bloques de 15 minutos y disponibilidad
+    SlotConflictException.kt     # Bloque ocupado por otro paciente
     Treatment.kt                 # Modelo de un tratamiento
     UserRole.kt                  # Roles: paciente, dentista y administrador
     UserProfile.kt               # Perfil del usuario con su rol
-    Dentist.kt                   # Dentista con especialidad y estado
+    Dentist.kt                   # Dentista con especialidad, estado y horario
   ui/
     login/                       # LoginViewModel, estado y eventos
     register/                    # RegisterViewModel, estado y eventos
     menu/                        # MenuViewModel, estado y eventos
     profile/                     # ProfileViewModel, estado y eventos
-    appointments/                # AppointmentsViewModel, adaptador y eventos
+    appointments/                # AppointmentsViewModel, disponibilidad y adaptador
     history/                     # HistoryViewModel, estado y eventos
     treatments/                  # TreatmentsViewModel, detalle y adaptador
     help/                        # HelpViewModel, catálogo y adaptador
@@ -243,6 +255,8 @@ app/src/test/java/com/example/the_white_smile/
     ProfileViewModelTest.kt      # Pruebas del ProfileViewModel
   ui/appointments/
     AppointmentsViewModelTest.kt # Pruebas del AppointmentsViewModel
+  domain/
+    AppointmentScheduleTest.kt   # Pruebas de bloques y horarios
   ui/history/
     HistoryViewModelTest.kt      # Pruebas del historial de citas
   ui/treatments/
@@ -271,8 +285,10 @@ app/src/main/res/
     activity_help.xml            # Diseño de la pantalla de ayuda
     item_faq.xml                 # Pregunta desplegable
     activity_dentists.xml        # Lista de dentistas del administrador
-    item_dentist.xml             # Dentista con su estado
-    dialog_new_dentist.xml       # Formulario de nueva cuenta
+    item_dentist.xml             # Dentista con estado y horario
+    dialog_new_dentist.xml       # Formulario de nueva cuenta y horario
+    dialog_dentist_schedule.xml  # Edición del horario de un dentista
+    view_dentist_schedule.xml    # Días y rango horario reutilizable
   values/                        # Cadenas de texto, arreglos, colores y temas
   drawable/                      # Iconos de la interfaz
 ```
@@ -306,7 +322,9 @@ git clone https://github.com/JonathanSeguraXP/Proyecto_Catedra_DSM441.git
 6. En Firestore Database, crear la base de datos y publicar las reglas. Cada usuario
    puede leer su propio perfil; solo el administrador puede modificarlo. Las citas
    siguen limitadas al usuario dueño del documento. Los dentistas son visibles para
-   todos los usuarios autenticados, pero solo el administrador puede modificarlos:
+   todos los usuarios autenticados, pero solo el administrador puede modificarlos.
+   Los bloques ocupados de la agenda (`dentists/{id}/slots`) se leen con sesión
+   iniciada, pero cada paciente solo puede crear o borrar los suyos:
 
 ```
 rules_version = '2';
@@ -326,6 +344,16 @@ service cloud.firestore {
     match /dentists/{dentistId} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
+
+      match /slots/{slotId} {
+        // Cualquier paciente autenticado ve la ocupacion, pero no la cita.
+        allow read: if request.auth != null;
+        // Solo se puede ocupar o liberar un bloque a nombre propio.
+        allow create: if request.auth != null &&
+          request.resource.data.patientId == request.auth.uid;
+        allow delete: if request.auth != null &&
+          resource.data.patientId == request.auth.uid;
+      }
     }
 
     match /users/{uid}/appointments/{appointmentId} {
@@ -364,9 +392,14 @@ la aplicación con el botón Run.
 `LoginViewModelTest` verifica las validaciones de los campos, la falta de conexión,
 el estado de carga y los casos de éxito y error. `ProfileViewModelTest` cubre la carga
 de la sesión, la edición del nombre, el envío de la verificación y el cambio de
-contraseña. `AppointmentsViewModelTest` comprueba la observación de las citas y de los dentistas
-activos, las validaciones de dentista, servicio y fecha, el solapamiento de horarios,
-la creación con el dentista elegido, la cancelación y el manejo de errores.
+contraseña. `AppointmentScheduleTest` comprueba las reglas puras de la agenda: bloques
+de 15 minutos, alineación de las horas, días de atención, rango de entrada y salida,
+tratamientos que ocupan varios bloques y descarte de horas ocupadas o ya pasadas.
+`AppointmentsViewModelTest` comprueba la observación de las citas y de los dentistas
+activos, las validaciones de dentista, tratamiento y fecha, el horario del dentista, el
+solapamiento de citas propias, la creación con el tratamiento y el dentista elegidos,
+el conflicto cuando otro paciente ocupa el bloque, la disponibilidad de horas libres, la
+cancelación y el manejo de errores.
 `HistoryViewModelTest` comprueba el filtrado de
 las citas pasadas y canceladas, el orden descendente, el estado vacío y el manejo de
 errores. `TreatmentsViewModelTest` comprueba el catálogo, la búsqueda por
@@ -375,7 +408,8 @@ catálogo de preguntas y el despliegue de una sola respuesta a la vez.
 `MenuViewModelTest` comprueba el saludo, la lectura del rol, el caso de paciente sin
 perfil, el manejo del error de lectura y el cierre de sesión.
 `DentistsViewModelTest` verifica la lista de dentistas, las validaciones de la nueva
-cuenta, la creación, el manejo de errores y la activación o desactivación.
+cuenta, la creación, el manejo de errores, la activación o desactivación y la edición
+del horario con sus validaciones de días, bloques de 15 minutos y rango.
 `ContactLinksTest` verifica la construcción de los enlaces de teléfono, WhatsApp,
 correo y mapas. Las pruebas utilizan dobles de prueba, por lo que no requieren
 conexión, Firebase ni emulador.
@@ -390,26 +424,36 @@ conexión, Firebase ni emulador.
 5. Probar el inicio de sesión con Google y con GitHub.
 6. Abrir la opción Perfil, editar el nombre y verificar que el saludo del menú se actualice.
 7. Probar el reenvío del correo de verificación y el cambio de contraseña.
-8. Abrir la opción Citas, agendar un turno eligiendo dentista, servicio, fecha y hora,
-   y comprobar que aparezca en la lista con el dentista elegido.
-9. Intentar agendar otra cita en el mismo horario y verificar el aviso de conflicto.
-10. Desactivar un dentista desde la cuenta del administrador y comprobar que ya no
+8. Abrir la opción Citas, agendar un turno eligiendo dentista, tratamiento y fecha, y
+   comprobar que aparezca en la lista con el dentista, el tratamiento y la duración.
+9. Verificar que el selector de hora solo muestre horas libres dentro del horario de
+   atención del dentista y que una cita de 60 minutos ocupe el espacio completo.
+10. Intentar agendar otra cita con el mismo dentista y el mismo horario desde otra
+    cuenta; el bloque debe aparecer ocupado y, si se confirma a la vez, debe mostrarse
+    el aviso de que otra persona ocupó el horario.
+11. Intentar agendar otra cita propia en el mismo horario y verificar el aviso de
+    conflicto.
+12. Desactivar un dentista desde la cuenta del administrador y comprobar que ya no
     aparece en el selector de nueva cita.
-11. Cancelar una cita pendiente y confirmar el cambio de estado.
-12. Abrir la opción Historial y comprobar que aparezca la cita cancelada, además de
+13. Cancelar una cita pendiente y confirmar el cambio de estado; la hora debe volver a
+    quedar libre para ese dentista.
+14. Abrir la opción Historial y comprobar que aparezca la cita cancelada, además de
     las citas cuya fecha ya pasó.
-13. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
-14. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
-15. Abrir la opción Ayuda, desplegar una pregunta y comprobar que se cierre al abrir
+15. Abrir la opción Contacto y probar los botones de llamada, WhatsApp, correo y mapa.
+16. Abrir la opción Tratamientos, entrar al detalle de un tratamiento y volver a la lista.
+17. Abrir la opción Ayuda, desplegar una pregunta y comprobar que se cierre al abrir
     otra; probar el botón Ir a Contacto.
-16. Iniciar sesión con la cuenta de administrador y verificar que el menú muestre
+18. Iniciar sesión con la cuenta de administrador y verificar que el menú muestre
     “Panel de administración”; con una cuenta sin perfil debe mostrarse como paciente.
-17. Abrir la opción Dentistas, crear una cuenta con nombre, especialidad, correo y
-    contraseña, y comprobar que aparezca en la lista sin cerrar la sesión del admin.
-18. Cerrar sesión e iniciar sesión con la cuenta del dentista recién creada; debe
+19. Abrir la opción Dentistas, crear una cuenta con nombre, especialidad, correo,
+    contraseña y horario, y comprobar que aparezca en la lista sin cerrar la sesión del
+    admin.
+20. Editar el horario de un dentista desde el botón Horario y comprobar que el resumen
+    de la lista cambie y que las horas de las citas respeten el nuevo rango.
+21. Cerrar sesión e iniciar sesión con la cuenta del dentista recién creada; debe
     entrar al menú del dentista.
-19. Volver a la cuenta de administrador y desactivar al dentista desde el interruptor.
-20. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
+22. Volver a la cuenta de administrador y desactivar al dentista desde el interruptor.
+23. Cerrar sesión y confirmar el regreso a la pantalla de inicio de sesión.
 
 ## Requisitos del enunciado
 
@@ -427,6 +471,8 @@ conexión, Firebase ni emulador.
 - [x] Roles de paciente, dentista y administrador con menú adaptado.
 - [x] Creación de cuentas de dentistas desde la app por parte del administrador.
 - [x] Selección de dentista al agendar una cita.
+- [x] Horarios de atención por dentista con bloques de 15 minutos.
+- [x] Duración real de cada tratamiento y bloqueo de horarios ocupados.
 
 ## Autor
 

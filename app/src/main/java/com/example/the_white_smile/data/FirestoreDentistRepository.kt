@@ -38,10 +38,14 @@ class FirestoreDentistRepository(
         displayName: String,
         email: String,
         password: String,
-        specialty: String
+        specialty: String,
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
     ): Result<Dentist> = runData {
         val account = accountCreator.createAccount(displayName, email, password)
             .getOrElse { throw it }
+        val schedule = scheduleFields(workDays, startMinute, endMinute)
 
         try {
             val batch = firestore.batch()
@@ -61,7 +65,7 @@ class FirestoreDentistRepository(
                     FIELD_EMAIL to email,
                     FIELD_SPECIALTY to specialty,
                     FIELD_ACTIVE to true
-                )
+                ) + schedule
             )
             batch.commit().awaitResult()
 
@@ -71,7 +75,10 @@ class FirestoreDentistRepository(
                 displayName = displayName,
                 email = email,
                 specialty = specialty,
-                active = true
+                active = true,
+                workDays = workDays,
+                startMinute = startMinute,
+                endMinute = endMinute
             )
         } catch (e: CancellationException) {
             account.discard()
@@ -99,7 +106,34 @@ class FirestoreDentistRepository(
         batch.commit().awaitResult()
     }
 
+    override suspend fun updateSchedule(
+        dentistId: String,
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
+    ): Result<Unit> = runData {
+        dentistsRef()
+            .document(dentistId)
+            .set(
+                scheduleFields(workDays, startMinute, endMinute),
+                SetOptions.merge()
+            )
+            .awaitResult()
+        Unit
+    }
+
     private fun dentistsRef() = firestore.collection(DENTISTS)
+
+    /** Los dias se guardan como una lista ordenada para poder leerlos desde la consola. */
+    private fun scheduleFields(
+        workDays: Set<Int>,
+        startMinute: Int,
+        endMinute: Int
+    ): Map<String, Any> = mapOf(
+        FIELD_WORK_DAYS to workDays.sorted(),
+        FIELD_START_MINUTE to startMinute,
+        FIELD_END_MINUTE to endMinute
+    )
 
     private fun DocumentSnapshot.toDentist(): Dentist? {
         if (!exists()) return null
@@ -110,8 +144,21 @@ class FirestoreDentistRepository(
             displayName = name,
             email = email,
             specialty = getString(FIELD_SPECIALTY).orEmpty(),
-            active = getBoolean(FIELD_ACTIVE) ?: true
+            active = getBoolean(FIELD_ACTIVE) ?: true,
+            workDays = readWorkDays(),
+            startMinute = getLong(FIELD_START_MINUTE)?.toInt()
+                ?: Dentist.DEFAULT_START_MINUTE,
+            endMinute = getLong(FIELD_END_MINUTE)?.toInt()
+                ?: Dentist.DEFAULT_END_MINUTE
         )
+    }
+
+    private fun DocumentSnapshot.readWorkDays(): Set<Int> {
+        val stored = get(FIELD_WORK_DAYS) as? List<*> ?: return Dentist.DEFAULT_WORK_DAYS
+        val days = stored.mapNotNull { (it as? Number)?.toInt() }
+            .filter { it in 1..7 }
+            .toSet()
+        return days.ifEmpty { Dentist.DEFAULT_WORK_DAYS }
     }
 
     /** Ejecuta el bloque y traduce cualquier fallo a un [Result] fallido. */
@@ -131,5 +178,8 @@ class FirestoreDentistRepository(
         const val FIELD_SPECIALTY = "specialty"
         const val FIELD_ROLE = "role"
         const val FIELD_ACTIVE = "active"
+        const val FIELD_WORK_DAYS = "workDays"
+        const val FIELD_START_MINUTE = "startMinute"
+        const val FIELD_END_MINUTE = "endMinute"
     }
 }

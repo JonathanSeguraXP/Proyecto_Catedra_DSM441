@@ -11,6 +11,9 @@ sealed class DentistsEvent {
     /** Cuenta creada correctamente; incluye el nombre del dentista. */
     data class Created(val displayName: String) : DentistsEvent()
 
+    /** Horario actualizado correctamente; incluye el nombre del dentista. */
+    data class ScheduleUpdated(val displayName: String) : DentistsEvent()
+
     /**
      * Error de Firebase Authentication o de Cloud Firestore.
      * La pantalla decide con que traductor mostrarlo.

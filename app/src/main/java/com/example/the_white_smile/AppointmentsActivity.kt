@@ -1,7 +1,6 @@
 package com.example.the_white_smile
 
 import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -18,6 +17,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import com.example.the_white_smile.core.isUserCancelled
 import com.example.the_white_smile.domain.Appointment
+import com.example.the_white_smile.domain.AppointmentSchedule
 import com.example.the_white_smile.ui.appointments.AppointmentAdapter
 import com.example.the_white_smile.ui.appointments.AppointmentsEvent
 import com.example.the_white_smile.ui.appointments.AppointmentsUiState
@@ -27,9 +27,11 @@ import com.example.the_white_smile.util.FirestoreErrors
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.Calendar
-import java.util.Locale
 
 /**
  * Pantalla de citas.
@@ -123,14 +125,42 @@ class AppointmentsActivity : AppCompatActivity() {
 
         val actDentist = content.findViewById<AutoCompleteTextView>(R.id.actAppointmentDentist)
         val tvNoDentists = content.findViewById<TextView>(R.id.tvNoDentists)
-        val actService = content.findViewById<AutoCompleteTextView>(R.id.actAppointmentService)
+        val actTreatment =
+            content.findViewById<AutoCompleteTextView>(R.id.actAppointmentTreatment)
         val btnPickDate = content.findViewById<MaterialButton>(R.id.btnPickDate)
-        val btnPickTime = content.findViewById<MaterialButton>(R.id.btnPickTime)
+        val tilTime = content.findViewById<TextInputLayout>(R.id.tilAppointmentTime)
+        val actTime = content.findViewById<AutoCompleteTextView>(R.id.actAppointmentTime)
+        val tvAvailabilityHint = content.findViewById<TextView>(R.id.tvAvailabilityHint)
+        val tvTreatmentDuration = content.findViewById<TextView>(R.id.tvTreatmentDuration)
+
+        val state = viewModel.uiState.value
+        val dentists = state.dentists
+        val treatments = state.treatments
+
+        var selectedDentistId: String? = null
+        var selectedTreatmentId: String? = null
+        var selectedDayStart: Long? = null
+        var selectedStartAt: Long? = null
+        var availableTimes: List<Long> = emptyList()
+
+        fun resetTime() {
+            selectedStartAt = null
+            availableTimes = emptyList()
+            actTime.setText("", false)
+            actTime.setAdapter(null)
+            actTime.isEnabled = false
+            tilTime.isEnabled = false
+            tvAvailabilityHint.setText(R.string.appointments_availability_hint)
+        }
+
+        fun requestAvailability() {
+            val dentistId = selectedDentistId ?: return
+            val treatmentId = selectedTreatmentId ?: return
+            val dayStart = selectedDayStart ?: return
+            viewModel.requestAvailability(dentistId, treatmentId, dayStart)
+        }
 
         // Solo se ofrecen dentistas activos, cargados por el ViewModel.
-        val dentists = viewModel.uiState.value.dentists
-        var selectedDentistId: String? = null
-
         actDentist.setAdapter(
             ArrayAdapter(
                 this,
@@ -140,32 +170,46 @@ class AppointmentsActivity : AppCompatActivity() {
         )
         actDentist.setOnItemClickListener { _, _, position, _ ->
             selectedDentistId = dentists[position].id
+            resetTime()
+            requestAvailability()
         }
         actDentist.setOnClickListener { actDentist.showDropDown() }
         tvNoDentists.visibility = if (dentists.isEmpty()) View.VISIBLE else View.GONE
 
-        actService.setAdapter(
+        actTreatment.setAdapter(
             ArrayAdapter(
                 this,
                 android.R.layout.simple_list_item_1,
-                resources.getStringArray(R.array.appointment_services)
+                treatments.map { it.name }
             )
         )
-
-        // Fecha y hora elegidas por el usuario, antes de confirmar.
-        var selectedDate: Triple<Int, Int, Int>? = null
-        var selectedTime: Pair<Int, Int>? = null
+        actTreatment.setOnItemClickListener { _, _, position, _ ->
+            val treatment = treatments[position]
+            selectedTreatmentId = treatment.id
+            tvTreatmentDuration.text = getString(
+                R.string.appointments_duration,
+                treatment.durationMinutes
+            )
+            tvTreatmentDuration.visibility = View.VISIBLE
+            resetTime()
+            requestAvailability()
+        }
+        actTreatment.setOnClickListener { actTreatment.showDropDown() }
 
         btnPickDate.setOnClickListener {
-            val current = selectedDate?.let { dateMillis(it.first, it.second, it.third) }
-                ?: System.currentTimeMillis()
+            val current = selectedDayStart ?: System.currentTimeMillis()
             val initial = Calendar.getInstance().apply { timeInMillis = current }
 
             val picker = DatePickerDialog(
                 this,
                 { _, year, month, day ->
-                    selectedDate = Triple(year, month, day)
-                    btnPickDate.text = DateFormats.date(dateMillis(year, month, day))
+                    val dayStart = AppointmentSchedule.startOfDay(
+                        dateMillis(year, month, day)
+                    )
+                    selectedDayStart = dayStart
+                    btnPickDate.text = DateFormats.date(dayStart)
+                    resetTime()
+                    requestAvailability()
                 },
                 initial.get(Calendar.YEAR),
                 initial.get(Calendar.MONTH),
@@ -176,25 +220,11 @@ class AppointmentsActivity : AppCompatActivity() {
             picker.show()
         }
 
-        btnPickTime.setOnClickListener {
-            val initial = selectedTime?.let { (hour, minute) ->
-                Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour)
-                    set(Calendar.MINUTE, minute)
-                }
-            } ?: Calendar.getInstance()
-
-            val picker = TimePickerDialog(
-                this,
-                { _, hour, minute ->
-                    selectedTime = hour to minute
-                    btnPickTime.text = formatTime(hour, minute)
-                },
-                initial.get(Calendar.HOUR_OF_DAY),
-                initial.get(Calendar.MINUTE),
-                true
-            )
-            picker.show()
+        actTime.setOnItemClickListener { _, _, position, _ ->
+            selectedStartAt = availableTimes.getOrNull(position)
+        }
+        actTime.setOnClickListener {
+            if (actTime.isEnabled) actTime.showDropDown()
         }
 
         val dialog = AlertDialog.Builder(this)
@@ -207,16 +237,17 @@ class AppointmentsActivity : AppCompatActivity() {
         // Se reemplaza el listener para validar sin cerrar el dialogo.
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val service = actService.text?.toString().orEmpty()
-                val date = selectedDate
-                val time = selectedTime
                 // Si el usuario escribio el nombre sin tocar la lista, se busca igual.
                 val typedDentist = actDentist.text?.toString()?.trim().orEmpty()
                 val dentistId = selectedDentistId
                     ?: dentists.firstOrNull { it.displayName == typedDentist }?.id
+                val typedTreatment = actTreatment.text?.toString()?.trim().orEmpty()
+                val treatmentId = selectedTreatmentId
+                    ?: treatments.firstOrNull { it.name == typedTreatment }?.id
+                val startAt = selectedStartAt
 
                 when {
-                    date == null || time == null -> {
+                    startAt == null -> {
                         toastShort(R.string.appointments_error_datetime)
                     }
                     dentistId == null -> {
@@ -225,19 +256,63 @@ class AppointmentsActivity : AppCompatActivity() {
                             else R.string.appointments_error_dentist
                         )
                     }
-                    service.isBlank() -> {
-                        toastShort(R.string.appointments_error_service)
+                    treatmentId == null -> {
+                        toastShort(R.string.appointments_error_treatment)
                     }
                     else -> {
                         dialog.dismiss()
-                        viewModel.createAppointment(
-                            service = service,
-                            startAt = startAtMillis(date, time),
-                            dentistId = dentistId
-                        )
+                        viewModel.createAppointment(treatmentId, startAt, dentistId)
                     }
                 }
             }
+        }
+
+        // Mantiene la lista de horas sincronizada con la agenda del dentista.
+        val availabilityJob = lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState
+                    .map { it.availability }
+                    .distinctUntilChanged()
+                    .collect { value ->
+                        val availability = value ?: return@collect
+                        val matches = availability.dentistId == selectedDentistId &&
+                            availability.treatmentId == selectedTreatmentId &&
+                            availability.dayStartAt == selectedDayStart
+                        if (!matches) return@collect
+
+                        availableTimes = availability.times
+                        val enabled = !availability.isLoading
+                        tilTime.isEnabled = enabled
+                        actTime.isEnabled = enabled
+                        actTime.setAdapter(
+                            ArrayAdapter(
+                                this@AppointmentsActivity,
+                                android.R.layout.simple_list_item_1,
+                                availability.times.map { DateFormats.time(it) }
+                            )
+                        )
+                        tvAvailabilityHint.setText(
+                            when {
+                                availability.isLoading ->
+                                    R.string.appointments_availability_loading
+                                availability.times.isEmpty() ->
+                                    R.string.appointments_no_times
+                                else -> R.string.appointments_availability_times
+                            }
+                        )
+                        if (selectedStartAt != null &&
+                            !availability.times.contains(selectedStartAt)
+                        ) {
+                            selectedStartAt = null
+                            actTime.setText("", false)
+                        }
+                    }
+            }
+        }
+
+        dialog.setOnDismissListener {
+            availabilityJob.cancel()
+            viewModel.clearAvailability()
         }
 
         dialog.show()
@@ -286,20 +361,6 @@ class AppointmentsActivity : AppCompatActivity() {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
-
-    private fun startAtMillis(date: Triple<Int, Int, Int>, time: Pair<Int, Int>): Long =
-        Calendar.getInstance().apply {
-            set(Calendar.YEAR, date.first)
-            set(Calendar.MONTH, date.second)
-            set(Calendar.DAY_OF_MONTH, date.third)
-            set(Calendar.HOUR_OF_DAY, time.first)
-            set(Calendar.MINUTE, time.second)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-
-    private fun formatTime(hour: Int, minute: Int): String =
-        String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
 
     private fun showLoading() {
         if (layoutLoading.visibility == View.VISIBLE) return

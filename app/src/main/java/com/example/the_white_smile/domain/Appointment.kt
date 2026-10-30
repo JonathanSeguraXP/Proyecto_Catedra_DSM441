@@ -5,6 +5,7 @@ package com.example.the_white_smile.domain
  * [startAt] se guarda en milisegundos desde la epoca (UTC) y se muestra
  * en la zona horaria del dispositivo. [dentistName] se guarda junto con la
  * cita para poder mostrarla aunque el dentista cambie de nombre.
+ * [durationMinutes] permite saber cuantos bloques de la agenda ocupa.
  */
 data class Appointment(
     val id: String,
@@ -12,8 +13,15 @@ data class Appointment(
     val startAt: Long,
     val status: AppointmentStatus = AppointmentStatus.PENDING,
     val dentistId: String? = null,
-    val dentistName: String? = null
-)
+    val dentistName: String? = null,
+    val treatmentId: String? = null,
+    val durationMinutes: Int = DEFAULT_DURATION_MINUTES
+) {
+    companion object {
+        /** Duracion asumida para citas creadas antes de esta version. */
+        const val DEFAULT_DURATION_MINUTES = 30
+    }
+}
 
 /** Estados posibles de una cita. */
 enum class AppointmentStatus {

@@ -13,12 +13,30 @@ interface AppointmentRepository {
     /** Emite la lista de citas del usuario cada vez que cambia en el servidor. */
     fun observeAppointments(): Flow<List<Appointment>>
 
+    /**
+     * Emite los bloques ocupados de un dentista en un dia.
+     * Solo expone la ocupacion, no las citas de otros pacientes.
+     */
+    fun observeBusySlots(
+        dentistId: String,
+        dayStartAt: Long,
+        dayEndAt: Long
+    ): Flow<Set<Long>>
+
+    /**
+     * Reserva la cita y todos los bloques que ocupa.
+     * Si algun bloque ya esta ocupado falla con
+     * [com.example.the_white_smile.domain.SlotConflictException].
+     */
     suspend fun createAppointment(
         service: String,
         startAt: Long,
+        treatmentId: String,
+        durationMinutes: Int,
         dentistId: String,
         dentistName: String
     ): Result<Unit>
 
-    suspend fun cancelAppointment(id: String): Result<Unit>
+    /** Cancela la cita y libera sus bloques de la agenda del dentista. */
+    suspend fun cancelAppointment(appointment: Appointment): Result<Unit>
 }
