@@ -477,15 +477,27 @@ service cloud.firestore {
 }
 ```
 
-7. Crear el administrador inicial, una sola vez, desde Firebase Console:
-   1. En Authentication, agregar un usuario con correo y contraseña.
-   2. Copiar el UID de esa cuenta.
-   3. En Firestore, crear el documento `users/{uid}` con los campos
-      `email` (cadena), `displayName` (cadena) y `role` (`"ADMIN"`).
-   4. Iniciar sesión en la app con esa cuenta: el menú mostrará
-      “Panel de administración”.
-   La escritura desde la consola omite las reglas, por lo que este paso siempre
-   funciona aunque las reglas estén publicadas.
+7. Preparar una cuenta de administrador para la demostración (por ejemplo, una
+   cuenta separada para la docente):
+   1. En Firebase Console, abrir **Authentication → Users → Add user** e ingresar
+      el correo y una contraseña temporal segura. También se puede registrar la
+      cuenta desde la app; en ambos casos hay que completar después el perfil de
+      Firestore.
+   2. Copiar el UID que aparece para esa cuenta en Authentication.
+   3. En Firestore, crear o editar `users/{UID}` (el ID del documento debe ser
+      exactamente el UID copiado) con estos campos:
+      - `email`: correo de la cuenta (cadena).
+      - `displayName`: nombre para mostrar (cadena).
+      - `role`: `ADMIN` (cadena, en mayúsculas).
+   4. Cerrar sesión en la app e iniciar sesión con el correo y contraseña de esa
+      cuenta. El menú debe mostrar **Panel de administración**.
+   5. Compartir el correo y la contraseña temporal directamente con la docente.
+      No guardar contraseñas reales en este README ni en el repositorio. La docente
+      puede cambiarla luego mediante la opción de recuperación de contraseña.
+
+   La cuenta administrativa actual puede seguir usándose. Para dar acceso a otra
+   persona, crea una cuenta distinta y asigna `ADMIN` solo a su documento. Crear o
+   modificar el perfil desde Firebase Console omite las reglas de Firestore.
 8. La creación de cuentas de dentistas desde la app usa una instancia secundaria de
    `FirebaseApp`, por lo que no requiere Cloud Functions ni el plan Blaze. Solo debe
    estar habilitado el método de correo electrónico y contraseña.
